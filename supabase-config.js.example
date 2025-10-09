@@ -1,0 +1,22 @@
+// ⚙️ CONFIGURAÇÃO DO SUPABASE
+// 
+// INSTRUÇÕES:
+// 1. Copie este arquivo para "supabase-config.js"
+// 2. Preencha com suas credenciais do Supabase
+// 3. NUNCA commite o arquivo "supabase-config.js" real!
+
+const SUPABASE_CONFIG = {
+    // URL do seu projeto Supabase
+    // Exemplo: 'https://xyzcompany.supabase.co'
+    url: 'https://SEU-PROJETO.supabase.co',
+    
+    // Chave pública (anon key) do seu projeto
+    // Encontre em: Project Settings > API > anon/public
+    anonKey: 'SUA-CHAVE-PUBLICA-AQUI'
+};
+
+// ⚠️ IMPORTANTE: 
+// - A anon key é segura para uso no frontend
+// - Configure Row Level Security (RLS) no Supabase
+// - Nunca exponha a service_role key no frontend!
+

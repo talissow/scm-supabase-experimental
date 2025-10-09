@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SCM - Sistema de Controle de Materiais</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+    <!-- SheetJS para manipulação de XLSX via CDN -->
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📦 Controle de Materiais</h1>
+            <div class="alert-counter" id="alertCounter">
+                <span class="alert-icon">⚠️</span>
+                <span id="alertCount">0</span> materiais em estoque baixo
+            </div>
+        </header>
+
+        <div class="main-content">
+            <!-- Seção de Cadastro/Edição -->
+            <section class="form-section">
+                <h2 id="formTitle">Cadastrar Material</h2>
+                <form id="productForm">
+                    <input type="hidden" id="productId">
+                    
+                    <div class="form-group">
+                        <label for="productName">Nome do Material *</label>
+                        <input type="text" id="productName" required placeholder="Ex: Cimento CP II 50kg">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productDescription">Descrição</label>
+                        <textarea id="productDescription" rows="2" placeholder="Descrição opcional do material"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="productType">Tipo/Categoria *</label>
+                        <div class="type-input-wrapper">
+                            <select id="productType" required>
+                                <option value="">Selecione o tipo</option>
+                                <optgroup label="📦 Categorias Padrão">
+                                    <option value="cimento-argamassa">🏗️ Cimento e Argamassa</option>
+                                    <option value="areia-brita">⛰️ Areia e Brita</option>
+                                    <option value="tijolos-blocos">🧱 Tijolos e Blocos</option>
+                                    <option value="ferragens">🔩 Ferragens</option>
+                                    <option value="hidraulica">🚰 Hidráulica</option>
+                                    <option value="eletrica">⚡ Elétrica</option>
+                                    <option value="tintas-vernizes">🎨 Tintas e Vernizes</option>
+                                    <option value="madeiras">🪵 Madeiras</option>
+                                    <option value="ferramentas">🔨 Ferramentas</option>
+                                    <option value="acabamento">✨ Acabamento</option>
+                                    <option value="outros">📦 Outros</option>
+                                </optgroup>
+                            </select>
+                            <button type="button" class="btn-manage-types" onclick="openManageTypesModal()" title="Gerenciar tipos">⚙️</button>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="productQuantity">Quantidade Atual *</label>
+                            <input type="number" id="productQuantity" required min="0" value="0" step="0.01">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="productMinQuantity">Quantidade Mínima *</label>
+                            <input type="number" id="productMinQuantity" required min="0" value="5" step="0.01">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="productUnit">Unidade de Medida *</label>
+                            <select id="productUnit" required>
+                                <option value="unid">Unidade (unid)</option>
+                                <optgroup label="📦 Sólidos - Massa/Peso">
+                                    <option value="kg">Quilograma (kg)</option>
+                                    <option value="g">Grama (g)</option>
+                                    <option value="t">Tonelada (t)</option>
+                                    <option value="saco">Saco</option>
+                                    <option value="fardo">Fardo</option>
+                                </optgroup>
+                                <optgroup label="📐 Sólidos - Comprimento">
+                                    <option value="m">Metro (m)</option>
+                                    <option value="cm">Centímetro (cm)</option>
+                                    <option value="mm">Milímetro (mm)</option>
+                                    <option value="barra">Barra</option>
+                                    <option value="rolo">Rolo</option>
+                                </optgroup>
+                                <optgroup label="📏 Sólidos - Área">
+                                    <option value="m²">Metro quadrado (m²)</option>
+                                    <option value="cm²">Centímetro quadrado (cm²)</option>
+                                    <option value="chapa">Chapa</option>
+                                    <option value="placa">Placa</option>
+                                </optgroup>
+                                <optgroup label="📦 Sólidos - Volume">
+                                    <option value="m³">Metro cúbico (m³)</option>
+                                    <option value="cm³">Centímetro cúbico (cm³)</option>
+                                    <option value="caixa">Caixa</option>
+                                    <option value="pacote">Pacote</option>
+                                </optgroup>
+                                <optgroup label="💧 Líquidos - Volume">
+                                    <option value="L">Litro (L)</option>
+                                    <option value="mL">Mililitro (mL)</option>
+                                    <option value="galão">Galão</option>
+                                    <option value="lata">Lata</option>
+                                    <option value="balde">Balde</option>
+                                    <option value="tambor">Tambor</option>
+                                </optgroup>
+                                <optgroup label="💨 Gases - Volume">
+                                    <option value="m³">Metro cúbico (m³)</option>
+                                    <option value="botijão">Botijão</option>
+                                    <option value="cilindro">Cilindro</option>
+                                </optgroup>
+                                <optgroup label="🔢 Quantidades">
+                                    <option value="peça">Peça</option>
+                                    <option value="par">Par</option>
+                                    <option value="dúzia">Dúzia</option>
+                                    <option value="cento">Cento</option>
+                                    <option value="milheiro">Milheiro</option>
+                                    <option value="conjunto">Conjunto</option>
+                                    <option value="kit">Kit</option>
+                                </optgroup>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">Adicionar Material</button>
+                        <button type="button" class="btn btn-secondary" id="cancelBtn" style="display: none;">Cancelar</button>
+                    </div>
+                </form>
+            </section>
+
+            <!-- Seção de Busca e Ações -->
+            <section class="actions-section">
+                <div class="search-box">
+                    <input type="text" id="searchInput" placeholder="🔍 Buscar material por nome...">
+                </div>
+
+                <div class="export-import-actions">
+                    <button class="btn btn-warning" id="quickImportBtn" style="display: none;" title="Reimportar último arquivo">
+                        ⚡ Importar Novamente
+                    </button>
+
+                    <div class="dropdown">
+                        <button class="btn btn-success">📥 Importar</button>
+                        <div class="dropdown-content">
+                            <a href="#" id="importJSON">JSON</a>
+                            <a href="#" id="importCSV">CSV</a>
+                            <a href="#" id="importXLSX">XLSX</a>
+                        </div>
+                    </div>
+
+                    <div class="dropdown">
+                        <button class="btn btn-info">📤 Exportar</button>
+                        <div class="dropdown-content">
+                            <a href="#" id="exportJSON">JSON</a>
+                            <a href="#" id="exportCSV">CSV</a>
+                            <a href="#" id="exportXLSX">XLSX</a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Abas de Visualização -->
+            <section class="tabs-section">
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="list">📋 Lista Completa</button>
+                    <button class="tab-button" data-tab="grouped">📦 Agrupado por Tipo</button>
+                </div>
+
+                <!-- Aba: Lista Completa -->
+                <div id="listTab" class="tab-content active">
+                    <div class="list-header">
+                        <h2>Lista de Materiais</h2>
+                        <div class="pagination-controls">
+                            <label for="itemsPerPage">Itens por página:</label>
+                            <select id="itemsPerPage" onchange="changeItemsPerPage()">
+                                <option value="10">10</option>
+                                <option value="25" selected>25</option>
+                                <option value="50">50</option>
+                                <option value="100">100</option>
+                                <option value="all">Todos</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="table-wrapper">
+                        <table id="productsTable">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Tipo</th>
+                                    <th>Descrição</th>
+                                    <th>Quantidade</th>
+                                    <th>Qtd. Mínima</th>
+                                    <th>Unidade</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                                <tr class="filter-row">
+                                    <th>
+                                        <input type="text" class="column-filter" id="filterName" placeholder="Filtrar por nome...">
+                                    </th>
+                                    <th>
+                                        <select class="column-filter" id="filterType">
+                                            <option value="">Todos os tipos</option>
+                                        </select>
+                                    </th>
+                                    <th>
+                                        <input type="text" class="column-filter" id="filterDescription" placeholder="Filtrar descrição...">
+                                    </th>
+                                    <th>
+                                        <input type="number" class="column-filter column-filter-small" id="filterQuantityMin" placeholder="Min">
+                                    </th>
+                                    <th>
+                                        <input type="number" class="column-filter column-filter-small" id="filterMinQuantityMin" placeholder="Min">
+                                    </th>
+                                    <th>
+                                        <select class="column-filter" id="filterUnit">
+                                            <option value="">Todas</option>
+                                        </select>
+                                    </th>
+                                    <th>
+                                        <select class="column-filter" id="filterStatus">
+                                            <option value="">Todos</option>
+                                            <option value="ok">OK</option>
+                                            <option value="low">Estoque Baixo</option>
+                                            <option value="critical">Esgotado</option>
+                                        </select>
+                                    </th>
+                                    <th>
+                                        <button class="btn-clear-filters" onclick="clearAllFilters()" title="Limpar filtros">🗑️</button>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody id="productsTableBody">
+                                <tr>
+                                    <td colspan="8" class="empty-state">Nenhum material cadastrado. Adicione um material acima.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="pagination-footer">
+                        <div class="pagination-info">
+                            <span id="paginationInfo">Mostrando 0 de 0 materiais</span>
+                        </div>
+                        <div class="pagination-buttons">
+                            <button class="btn-pagination" onclick="firstPage()" id="firstPageBtn" disabled>
+                                <span>«</span>
+                            </button>
+                            <button class="btn-pagination" onclick="previousPage()" id="prevPageBtn" disabled>
+                                <span>‹ Anterior</span>
+                            </button>
+                            <div class="page-numbers" id="pageNumbers"></div>
+                            <button class="btn-pagination" onclick="nextPage()" id="nextPageBtn" disabled>
+                                <span>Próxima ›</span>
+                            </button>
+                            <button class="btn-pagination" onclick="lastPage()" id="lastPageBtn" disabled>
+                                <span>»</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Aba: Agrupado por Tipo -->
+                <div id="groupedTab" class="tab-content">
+                    <h2>Materiais Agrupados por Tipo</h2>
+                    <div id="groupedContent">
+                        <p class="empty-state">Nenhum material cadastrado.</p>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Rodapé -->
+        <footer class="system-footer">
+            <p><strong>SCM - Sistema de Controle de Materiais</strong> v1.2.0</p>
+            <p>Desenvolvido por <strong>Talishow Tech</strong> © 2025 - Todos os direitos reservados</p>
+        </footer>
+    </div>
+
+    <!-- Modal de Movimentação -->
+    <div id="movementModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>Movimentação de Material</h2>
+            <p id="modalProductName"></p>
+            
+            <form id="movementForm">
+                <input type="hidden" id="movementProductId">
+                
+                <div class="form-group">
+                    <label>Tipo de Movimentação *</label>
+                    <div class="radio-group">
+                        <label>
+                            <input type="radio" name="movementType" value="entrada" checked>
+                            Entrada
+                        </label>
+                        <label>
+                            <input type="radio" name="movementType" value="saida">
+                            Saída
+                        </label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="movementQuantity">Quantidade *</label>
+                    <input type="number" id="movementQuantity" required min="1" value="1">
+                </div>
+
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Registrar Movimentação</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal de Histórico -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content modal-large">
+            <span class="close">&times;</span>
+            <h2>Histórico de Movimentações</h2>
+            <p id="historyProductName"></p>
+            
+            <div class="table-wrapper">
+                <table id="historyTable">
+                    <thead>
+                        <tr>
+                            <th>Data/Hora</th>
+                            <th>Tipo</th>
+                            <th>Quantidade</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Gerenciar Tipos -->
+    <div id="manageTypesModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2>⚙️ Gerenciar Tipos de Materiais</h2>
+            
+            <div class="add-type-section">
+                <h3>➕ Adicionar Novo Tipo</h3>
+                <form id="addTypeForm">
+                    <div class="form-row">
+                        <div class="form-group" style="flex: 2;">
+                            <label for="newTypeName">Nome do Tipo *</label>
+                            <input type="text" id="newTypeName" required placeholder="Ex: Vidros e Espelhos">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="newTypeIcon">Ícone</label>
+                            <input type="text" id="newTypeIcon" placeholder="Ex: 🪟" maxlength="2">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Adicionar Tipo</button>
+                </form>
+            </div>
+
+            <div class="types-list-section">
+                <h3>📋 Tipos Personalizados</h3>
+                <div id="customTypesList" class="custom-types-list">
+                    <p class="empty-state">Nenhum tipo personalizado cadastrado.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Input oculto para upload de arquivos -->
+    <input type="file" id="fileInput" style="display: none;" accept=".json,.csv,.xlsx">
+
+    <script src="db.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
+
