@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Tabelas - SCM</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+        }
+
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 5px;
+            transition: transform 0.3s ease;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .test-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .test-results {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .table-list {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .table-item {
+            padding: 8px 0;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .table-item:last-child {
+            border-bottom: none;
+        }
+
+        .table-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .table-status {
+            float: right;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .status-exists {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-missing {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        .instructions {
+            background: #e8f4fd;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+        }
+
+        .instructions h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .instructions ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin: 8px 0;
+            color: #666;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            transition: background 0.3s ease;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        .back-link:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗄️ Teste de Tabelas do Supabase</h1>
+
+        <div class="instructions">
+            <h3>📋 Instruções:</h3>
+            <ol>
+                <li>Execute o schema SQL no Supabase primeiro</li>
+                <li>Clique em "Verificar Tabelas" para testar</li>
+                <li>Se alguma tabela estiver faltando, execute o SQL novamente</li>
+                <li>Após todas as tabelas existirem, teste a criação do administrador</li>
+            </ol>
+        </div>
+
+        <!-- Status da Conexão -->
+        <div class="test-section">
+            <h2>📡 Status da Conexão</h2>
+            <div id="connectionStatus" class="status info">Verificando conexão...</div>
+            <button class="test-button" onclick="checkConnection()">Verificar Conexão</button>
+        </div>
+
+        <!-- Verificar Tabelas -->
+        <div class="test-section">
+            <h2>🗄️ Verificar Tabelas</h2>
+            <button class="test-button" onclick="checkTables()">Verificar Tabelas</button>
+            <div class="loading" id="tablesLoading">🔄 Verificando tabelas...</div>
+            <div id="tablesResults" class="test-results" style="display: none;"></div>
+        </div>
+
+        <!-- Teste de Criação de Usuário -->
+        <div class="test-section">
+            <h2>👤 Teste de Criação de Usuário</h2>
+            <button class="test-button" onclick="testUserCreation()">Testar Criação de Usuário</button>
+            <div class="loading" id="userLoading">🔄 Testando criação...</div>
+            <div id="userResults" class="test-results" style="display: none;"></div>
+        </div>
+
+        <!-- Navegação -->
+        <div class="test-section">
+            <h2>🔗 Navegação</h2>
+            <button class="test-button" onclick="window.open('CRIAR_ADMIN.html', '_blank')">Criar Administrador</button>
+            <button class="test-button" onclick="window.open('login.html', '_blank')">Tela de Login</button>
+            <button class="test-button" onclick="window.open('TESTE_CONFIG_SUPABASE.html', '_blank')">Teste de Configuração</button>
+        </div>
+
+        <a href="login.html" class="back-link">← Voltar ao Login</a>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    
+    <script>
+        let tablesStatus = {};
+
+        // Verificar status inicial
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkConnection();
+        });
+
+        // Verificar conexão
+        async function checkConnection() {
+            try {
+                const statusDiv = document.getElementById('connectionStatus');
+                
+                if (typeof supabaseClient === 'undefined') {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = '❌ Supabase não configurado';
+                    return;
+                }
+
+                // Inicializar Supabase
+                const initialized = initSupabase();
+                if (!initialized) {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = '❌ Falha ao inicializar Supabase';
+                    return;
+                }
+
+                // Testar conexão básica
+                const { data, error } = await supabaseClient.from('products').select('count').limit(1);
+                
+                if (error) {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = '❌ Erro de conexão: ' + error.message;
+                } else {
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = '✅ Conexão com Supabase OK';
+                }
+            } catch (error) {
+                document.getElementById('connectionStatus').className = 'status error';
+                document.getElementById('connectionStatus').textContent = '❌ Erro: ' + error.message;
+            }
+        }
+
+        // Verificar tabelas
+        async function checkTables() {
+            const resultsDiv = document.getElementById('tablesResults');
+            const loadingDiv = document.getElementById('tablesLoading');
+
+            loadingDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+
+            try {
+                const tables = [
+                    'products',
+                    'movements', 
+                    'custom_types',
+                    'users',
+                    'audit_log'
+                ];
+
+                let allTablesExist = true;
+                let tablesInfo = '<div class="table-list"><h3>Status das Tabelas:</h3>';
+
+                for (const table of tables) {
+                    try {
+                        const { data, error } = await supabaseClient
+                            .from(table)
+                            .select('*')
+                            .limit(1);
+
+                        if (error) {
+                            tablesStatus[table] = false;
+                            allTablesExist = false;
+                            tablesInfo += `
+                                <div class="table-item">
+                                    <span class="table-name">${table}</span>
+                                    <span class="table-status status-missing">❌ Não existe</span>
+                                </div>
+                            `;
+                        } else {
+                            tablesStatus[table] = true;
+                            tablesInfo += `
+                                <div class="table-item">
+                                    <span class="table-name">${table}</span>
+                                    <span class="table-status status-exists">✅ Existe</span>
+                                </div>
+                            `;
+                        }
+                    } catch (err) {
+                        tablesStatus[table] = false;
+                        allTablesExist = false;
+                        tablesInfo += `
+                            <div class="table-item">
+                                <span class="table-name">${table}</span>
+                                <span class="table-status status-missing">❌ Erro: ${err.message}</span>
+                            </div>
+                        `;
+                    }
+                }
+
+                tablesInfo += '</div>';
+
+                if (allTablesExist) {
+                    showResults('tablesResults', `
+                        <div class="status success">✅ Todas as tabelas existem!</div>
+                        ${tablesInfo}
+                        <p><strong>Próximo passo:</strong> Agora você pode criar o administrador!</p>
+                    `, 'success');
+                } else {
+                    showResults('tablesResults', `
+                        <div class="status error">❌ Algumas tabelas estão faltando!</div>
+                        ${tablesInfo}
+                        <p><strong>Solução:</strong> Execute o schema SQL no Supabase primeiro!</p>
+                    `, 'error');
+                }
+
+            } catch (error) {
+                showResults('tablesResults', `<div class="status error">❌ Erro ao verificar tabelas: ${error.message}</div>`, 'error');
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Testar criação de usuário
+        async function testUserCreation() {
+            const resultsDiv = document.getElementById('userResults');
+            const loadingDiv = document.getElementById('userLoading');
+
+            if (!tablesStatus.users) {
+                showResults('userResults', '<div class="status error">❌ Tabela users não existe! Execute o schema SQL primeiro.</div>', 'error');
+                return;
+            }
+
+            loadingDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+
+            try {
+                const testEmail = `teste-${Date.now()}@exemplo.com`;
+                const testPassword = '123456';
+                const testName = 'Usuário Teste';
+
+                console.log('Tentando criar usuário de teste:', testEmail);
+
+                // Criar usuário no Supabase Auth
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                    email: testEmail,
+                    password: testPassword,
+                    options: {
+                        data: {
+                            full_name: testName
+                        }
+                    }
+                });
+
+                if (authError) {
+                    throw new Error('Erro no Supabase Auth: ' + authError.message);
+                }
+
+                console.log('Usuário criado no Auth:', authData);
+
+                // Aguardar um pouco
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // Criar perfil na tabela users
+                const { error: profileError } = await supabaseClient
+                    .from('users')
+                    .insert({
+                        id: authData.user.id,
+                        email: testEmail,
+                        full_name: testName,
+                        role: 'user',
+                        is_active: true
+                    });
+
+                if (profileError) {
+                    throw new Error('Erro ao criar perfil: ' + profileError.message);
+                }
+
+                // Limpar usuário de teste
+                await supabaseClient.from('users').delete().eq('id', authData.user.id);
+
+                showResults('userResults', `
+                    <div class="status success">✅ Criação de usuário funcionando!</div>
+                    <p>O sistema está pronto para criar administradores.</p>
+                `, 'success');
+
+            } catch (error) {
+                console.error('Erro no teste de usuário:', error);
+                showResults('userResults', `<div class="status error">❌ Erro: ${error.message}</div>`, 'error');
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Função auxiliar para mostrar resultados
+        function showResults(containerId, message, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = message;
+            container.className = `test-results status-${type}`;
+            container.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
