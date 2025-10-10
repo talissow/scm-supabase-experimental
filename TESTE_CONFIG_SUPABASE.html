@@ -94,11 +94,16 @@
                     configInfo += `<div class="success">✅ SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY.substring(0, 20)}...</div>`;
                 }
 
-                // Verificar se o client foi inicializado
-                if (supabaseClient) {
-                    configInfo += '<div class="success">✅ Supabase client inicializado</div>';
+                // Tentar inicializar o client se não estiver inicializado
+                if (!supabaseClient) {
+                    const initialized = initSupabase();
+                    if (initialized) {
+                        configInfo += '<div class="success">✅ Supabase client inicializado</div>';
+                    } else {
+                        configInfo += '<div class="error">❌ Falha ao inicializar Supabase client</div>';
+                    }
                 } else {
-                    configInfo += '<div class="error">❌ Supabase client não inicializado</div>';
+                    configInfo += '<div class="success">✅ Supabase client inicializado</div>';
                 }
 
                 showResult('configResult', configInfo);
@@ -180,8 +185,17 @@
         }
 
         // Executar verificação inicial
-        document.addEventListener('DOMContentLoaded', () => {
-            checkConfig();
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Tentar inicializar o Supabase primeiro
+            if (typeof initSupabase === 'function') {
+                const initialized = initSupabase();
+                console.log('Supabase inicializado:', initialized);
+            }
+            
+            // Aguardar um pouco para garantir que tudo carregou
+            setTimeout(() => {
+                checkConfig();
+            }, 500);
         });
     </script>
 </body>

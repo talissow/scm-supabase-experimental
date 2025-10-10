@@ -14,9 +14,20 @@ const SUPABASE_CONFIG = {
 let supabaseClient = null;
 
 function initSupabase() {
+    console.log('🔄 Tentando inicializar Supabase...');
+    console.log('Supabase library:', typeof supabase);
+    console.log('SUPABASE_CONFIG:', SUPABASE_CONFIG);
+    
     if (typeof supabase === 'undefined') {
         console.error('❌ Supabase library não carregada!');
         console.log('Adicione no HTML: <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>');
+        return false;
+    }
+    
+    if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
+        console.error('❌ Configuração do Supabase incompleta!');
+        console.log('URL:', SUPABASE_CONFIG.url);
+        console.log('Key:', SUPABASE_CONFIG.anonKey ? 'Definida' : 'Não definida');
         return false;
     }
     
@@ -26,6 +37,7 @@ function initSupabase() {
             SUPABASE_CONFIG.anonKey
         );
         console.log('✅ Supabase inicializado com sucesso!');
+        console.log('Client:', supabaseClient);
         return true;
     } catch (error) {
         console.error('❌ Erro ao inicializar Supabase:', error);
