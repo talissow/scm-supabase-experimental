@@ -198,6 +198,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     // Aguardar um pouco para garantir que outros scripts carregaram
     setTimeout(async () => {
         await protectPage();
+        
+        // Se passou na verificação, inicializar router se disponível
+        if (window.scmRouter && typeof window.scmRouter.handleInitialRoute === 'function') {
+            setTimeout(() => {
+                window.scmRouter.handleInitialRoute();
+            }, 200);
+        }
     }, 100);
 });
 

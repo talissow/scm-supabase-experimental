@@ -23,13 +23,10 @@ class SCMRouter {
         // Interceptar navegação do browser
         this.setupPopstateHandler();
         
-        // Verificar rota inicial
-        this.handleInitialRoute();
-        
         // Interceptar cliques em links
         this.setupLinkInterception();
         
-        console.log('🚀 Router inicializado');
+        console.log('🚀 Router inicializado (aguardando auth-guard)');
     }
     
     // Interceptar mudanças de URL (back/forward)
@@ -62,18 +59,11 @@ class SCMRouter {
         
         console.log('📍 Rota atual:', path, hash ? `#${hash}` : '');
         
-        // Verificar se é rota protegida
-        if (this.protectedRoutes.includes(path)) {
-            const isAuth = await this.checkAuthentication();
-            if (!isAuth) {
-                console.log('🔒 Acesso negado - redirecionando para login');
-                this.redirectToLogin();
-                return;
-            }
-        }
-        
-        // Processar rota
-        this.processRoute(path, hash);
+        // Deixar o auth-guard fazer a verificação de autenticação
+        // Apenas processar a rota se não for redirecionamento
+        setTimeout(() => {
+            this.processRoute(path, hash);
+        }, 100);
     }
     
     // Verificar autenticação
@@ -216,9 +206,10 @@ class SCMRouter {
 // Instanciar router globalmente
 let scmRouter;
 
-// Inicializar quando DOM estiver pronto
+// Inicializar quando DOM estiver pronto (mas aguardar auth-guard)
 document.addEventListener('DOMContentLoaded', () => {
     scmRouter = new SCMRouter();
+    // NÃO chamar handleInitialRoute aqui - será chamado pelo auth-guard
 });
 
 // Exportar para uso global
