@@ -2067,3 +2067,664 @@ async function clearAllStock() {
     }
 }
 
+// ===== DASHBOARD =====
+let dashboardCharts = {
+    category: null,
+    value: null,
+    status: null,
+    topMaterials: null
+};
+
+function renderDashboard() {
+    updateDashboardStats();
+    renderCategoryChart();
+    renderValueChart();
+    renderStatusChart();
+    renderTopMaterialsChart();
+    renderCriticalMaterials();
+}
+
+function updateDashboardStats() {
+    // Total de materiais
+    document.getElementById('statTotalMaterials').textContent = products.length;
+    
+    // Valor total (assumindo que existe campo cost)
+    const totalValue = products.reduce((sum, p) => {
+        return sum + (p.quantity * (p.cost || 0));
+    }, 0);
+    document.getElementById('statTotalValue').textContent = 
+        `R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+    
+    // Estoque baixo
+    const lowStock = products.filter(p => 
+        p.quantity > 0 && p.quantity <= p.minQuantity
+    ).length;
+    document.getElementById('statLowStock').textContent = lowStock;
+    
+    // Esgotados
+    const outOfStock = products.filter(p => p.quantity === 0).length;
+    document.getElementById('statOutOfStock').textContent = outOfStock;
+}
+
+function renderCategoryChart() {
+    const ctx = document.getElementById('categoryChart');
+    if (!ctx) return;
+    
+    // Destruir gráfico anterior se existir
+    if (dashboardCharts.category) {
+        dashboardCharts.category.destroy();
+    }
+    
+    // Agrupar por categoria
+    const categories = {};
+    products.forEach(p => {
+        const type = getTypeName(p.type);
+        categories[type] = (categories[type] || 0) + 1;
+    });
+    
+    dashboardCharts.category = new Chart(ctx, {
+        type: 'doughnut',
+        data: {
+            labels: Object.keys(categories),
+            datasets: [{
+                data: Object.values(categories),
+                backgroundColor: [
+                    '#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0',
+                    '#9966FF', '#FF9F40', '#FF6384', '#C9CBCF',
+                    '#8BC34A', '#FF5722', '#607D8B'
+                ],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        boxWidth: 15,
+                        padding: 10
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderValueChart() {
+    const ctx = document.getElementById('valueChart');
+    if (!ctx) return;
+    
+    if (dashboardCharts.value) {
+        dashboardCharts.value.destroy();
+    }
+    
+    // Calcular valor por categoria
+    const categoryValues = {};
+    products.forEach(p => {
+        const type = getTypeName(p.type);
+        const value = p.quantity * (p.cost || 0);
+        categoryValues[type] = (categoryValues[type] || 0) + value;
+    });
+    
+    // Ordenar por valor
+    const sorted = Object.entries(categoryValues)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 10);
+    
+    dashboardCharts.value = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: sorted.map(([label]) => label),
+            datasets: [{
+                label: 'Valor (R$)',
+                data: sorted.map(([, value]) => value),
+                backgroundColor: '#28a745',
+                borderColor: '#1e7e34',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `R$ ${context.parsed.y.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR');
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderStatusChart() {
+    const ctx = document.getElementById('statusChart');
+    if (!ctx) return;
+    
+    if (dashboardCharts.status) {
+        dashboardCharts.status.destroy();
+    }
+    
+    // Contar por status
+    const ok = products.filter(p => p.quantity > p.minQuantity).length;
+    const low = products.filter(p => p.quantity > 0 && p.quantity <= p.minQuantity).length;
+    const out = products.filter(p => p.quantity === 0).length;
+    
+    dashboardCharts.status = new Chart(ctx, {
+        type: 'pie',
+        data: {
+            labels: ['OK', 'Estoque Baixo', 'Esgotado'],
+            datasets: [{
+                data: [ok, low, out],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545'],
+                borderWidth: 2,
+                borderColor: '#fff'
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderTopMaterialsChart() {
+    const ctx = document.getElementById('topMaterialsChart');
+    if (!ctx) return;
+    
+    if (dashboardCharts.topMaterials) {
+        dashboardCharts.topMaterials.destroy();
+    }
+    
+    // Top 10 por valor
+    const sorted = products
+        .map(p => ({
+            name: p.name,
+            value: p.quantity * (p.cost || 0)
+        }))
+        .filter(p => p.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+    
+    dashboardCharts.topMaterials = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: sorted.map(p => p.name.length > 20 ? p.name.substring(0, 20) + '...' : p.name),
+            datasets: [{
+                label: 'Valor (R$)',
+                data: sorted.map(p => p.value),
+                backgroundColor: '#17a2b8',
+                borderColor: '#117a8b',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `R$ ${context.parsed.x.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR');
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+function renderCriticalMaterials() {
+    const container = document.getElementById('criticalMaterialsList');
+    if (!container) return;
+    
+    // Materiais críticos (estoque baixo ou esgotado)
+    const critical = products
+        .filter(p => p.quantity <= p.minQuantity)
+        .sort((a, b) => a.quantity - b.quantity);
+    
+    if (critical.length === 0) {
+        container.innerHTML = '<p style="text-align: center; color: #28a745;">✅ Todos os materiais com estoque adequado!</p>';
+        return;
+    }
+    
+    container.innerHTML = critical.map(p => `
+        <div class="critical-material-item">
+            <div class="critical-material-info">
+                <strong>${p.name}</strong>
+                <small>${getTypeName(p.type)} • ${p.unit}</small>
+            </div>
+            <div class="critical-material-stock">
+                <div class="stock-current">${p.quantity} ${p.unit}</div>
+                <div class="stock-min">Mín: ${p.minQuantity} ${p.unit}</div>
+            </div>
+        </div>
+    `).join('');
+}
+
+// Atualizar função switchTab para incluir dashboard
+const originalSwitchTab = switchTab;
+function switchTab(tabName) {
+    // Chamar função original
+    const tabButtons = document.querySelectorAll('.tab-button');
+    tabButtons.forEach(btn => btn.classList.remove('active'));
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    
+    const tabContents = document.querySelectorAll('.tab-content');
+    tabContents.forEach(content => content.classList.remove('active'));
+    
+    if (tabName === 'list') {
+        document.getElementById('listTab').classList.add('active');
+    } else if (tabName === 'grouped') {
+        document.getElementById('groupedTab').classList.add('active');
+        renderGroupedView();
+    } else if (tabName === 'dashboard') {
+        document.getElementById('dashboardTab').classList.add('active');
+        renderDashboard();
+    }
+}
+
+// ===== GERAÇÃO DE PDFs =====
+
+// Função auxiliar para inicializar jsPDF
+function createPDF() {
+    const { jsPDF } = window.jspdf;
+    return new jsPDF('p', 'mm', 'a4');
+}
+
+// Cabeçalho padrão dos relatórios
+function addPDFHeader(doc, title) {
+    // Logo/Título
+    doc.setFontSize(20);
+    doc.setTextColor(40, 40, 40);
+    doc.text('📦 SCM - Controle de Materiais', 105, 20, { align: 'center' });
+    
+    // Título do relatório
+    doc.setFontSize(14);
+    doc.setTextColor(80, 80, 80);
+    doc.text(title, 105, 30, { align: 'center' });
+    
+    // Data e hora
+    doc.setFontSize(10);
+    doc.setTextColor(120, 120, 120);
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 105, 37, { align: 'center' });
+    
+    // Linha separadora
+    doc.setDrawColor(200, 200, 200);
+    doc.line(15, 42, 195, 42);
+    
+    return 48; // Retorna a posição Y após o cabeçalho
+}
+
+// Rodapé padrão
+function addPDFFooter(doc) {
+    const pageCount = doc.internal.getNumberOfPages();
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setFontSize(9);
+        doc.setTextColor(150, 150, 150);
+        doc.text(
+            `Página ${i} de ${pageCount}`,
+            105,
+            285,
+            { align: 'center' }
+        );
+        doc.text(
+            'Desenvolvido por Talishow Tech © 2025',
+            105,
+            290,
+            { align: 'center' }
+        );
+    }
+}
+
+// 1. RELATÓRIO COMPLETO
+function exportFullReportToPDF() {
+    const doc = createPDF();
+    let yPos = addPDFHeader(doc, 'Relatório Completo do Estoque');
+    
+    // Resumo
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.setTextColor(40, 40, 40);
+    doc.text('📊 Resumo', 15, yPos);
+    
+    yPos += 7;
+    doc.setFontSize(10);
+    doc.setTextColor(80, 80, 80);
+    doc.text(`Total de Materiais: ${products.length}`, 20, yPos);
+    
+    yPos += 5;
+    const totalValue = products.reduce((sum, p) => sum + (p.quantity * (p.cost || 0)), 0);
+    doc.text(`Valor Total: R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 20, yPos);
+    
+    yPos += 5;
+    const lowStock = products.filter(p => p.quantity <= p.minQuantity).length;
+    doc.text(`Materiais em Estoque Baixo: ${lowStock}`, 20, yPos);
+    
+    // Tabela de materiais
+    yPos += 10;
+    doc.autoTable({
+        startY: yPos,
+        head: [['Nome', 'Tipo', 'Qtd', 'Un', 'Mín', 'Status']],
+        body: products.map(p => [
+            p.name,
+            getTypeName(p.type),
+            p.quantity,
+            p.unit,
+            p.minQuantity,
+            p.quantity === 0 ? 'Esgotado' : 
+            p.quantity <= p.minQuantity ? 'Baixo' : 'OK'
+        ]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [52, 152, 219] },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        didParseCell: function(data) {
+            if (data.column.index === 5) {
+                const status = data.cell.raw;
+                if (status === 'Esgotado') {
+                    data.cell.styles.textColor = [220, 53, 69];
+                    data.cell.styles.fontStyle = 'bold';
+                } else if (status === 'Baixo') {
+                    data.cell.styles.textColor = [255, 193, 7];
+                    data.cell.styles.fontStyle = 'bold';
+                } else {
+                    data.cell.styles.textColor = [40, 167, 69];
+                }
+            }
+        }
+    });
+    
+    addPDFFooter(doc);
+    doc.save(`Relatorio_Completo_${getDateString()}.pdf`);
+    alert('✅ Relatório PDF gerado com sucesso!');
+}
+
+// 2. RELATÓRIO DE MATERIAIS EM FALTA
+function exportLowStockToPDF() {
+    const lowStockItems = products.filter(p => p.quantity <= p.minQuantity);
+    
+    if (lowStockItems.length === 0) {
+        alert('ℹ️ Não há materiais em falta!');
+        return;
+    }
+    
+    const doc = createPDF();
+    let yPos = addPDFHeader(doc, 'Relatório de Materiais em Falta');
+    
+    // Alerta
+    yPos += 10;
+    doc.setFillColor(255, 243, 205);
+    doc.rect(15, yPos, 180, 15, 'F');
+    doc.setFontSize(11);
+    doc.setTextColor(133, 100, 4);
+    doc.text(`⚠️ ${lowStockItems.length} materiais precisam de reposição`, 20, yPos + 10);
+    
+    yPos += 20;
+    doc.autoTable({
+        startY: yPos,
+        head: [['Nome', 'Tipo', 'Atual', 'Mínimo', 'Necessário']],
+        body: lowStockItems.map(p => [
+            p.name,
+            getTypeName(p.type),
+            `${p.quantity} ${p.unit}`,
+            `${p.minQuantity} ${p.unit}`,
+            `${Math.max(0, p.minQuantity - p.quantity)} ${p.unit}`
+        ]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [255, 193, 7] },
+        alternateRowStyles: { fillColor: [255, 248, 225] }
+    });
+    
+    addPDFFooter(doc);
+    doc.save(`Materiais_em_Falta_${getDateString()}.pdf`);
+    alert('✅ Relatório de falta gerado com sucesso!');
+}
+
+// 3. RELATÓRIO POR CATEGORIA
+function exportByCategoryToPDF() {
+    const doc = createPDF();
+    let yPos = addPDFHeader(doc, 'Relatório por Categoria');
+    
+    // Agrupar por tipo
+    const grouped = {};
+    products.forEach(p => {
+        const type = getTypeName(p.type);
+        if (!grouped[type]) {
+            grouped[type] = [];
+        }
+        grouped[type].push(p);
+    });
+    
+    Object.keys(grouped).sort().forEach(type => {
+        const items = grouped[type];
+        
+        // Cabeçalho da categoria
+        yPos += 10;
+        
+        // Verificar se precisa de nova página
+        if (yPos > 250) {
+            doc.addPage();
+            yPos = 20;
+        }
+        
+        doc.setFontSize(12);
+        doc.setTextColor(52, 152, 219);
+        doc.text(`${getTypeIcon(type)} ${type} (${items.length} itens)`, 15, yPos);
+        
+        yPos += 5;
+        doc.autoTable({
+            startY: yPos,
+            head: [['Nome', 'Qtd', 'Un', 'Mín', 'Status']],
+            body: items.map(p => [
+                p.name,
+                p.quantity,
+                p.unit,
+                p.minQuantity,
+                p.quantity === 0 ? '❌' : p.quantity <= p.minQuantity ? '⚠️' : '✅'
+            ]),
+            styles: { fontSize: 9 },
+            headStyles: { fillColor: [52, 152, 219] },
+            margin: { left: 20 }
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 5;
+    });
+    
+    addPDFFooter(doc);
+    doc.save(`Relatorio_por_Categoria_${getDateString()}.pdf`);
+    alert('✅ Relatório por categoria gerado!');
+}
+
+// 4. RELATÓRIO FINANCEIRO
+function exportFinancialToPDF() {
+    const doc = createPDF();
+    let yPos = addPDFHeader(doc, 'Relatório Financeiro do Estoque');
+    
+    // Calcular totais
+    const totalValue = products.reduce((sum, p) => sum + (p.quantity * (p.cost || 0)), 0);
+    const withCost = products.filter(p => p.cost > 0);
+    const noCost = products.filter(p => !p.cost || p.cost === 0);
+    
+    // Resumo financeiro
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.text('💰 Resumo Financeiro', 15, yPos);
+    
+    yPos += 7;
+    doc.setFontSize(10);
+    doc.text(`Valor Total em Estoque: R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 20, yPos);
+    
+    yPos += 5;
+    doc.text(`Materiais com Custo: ${withCost.length}`, 20, yPos);
+    
+    yPos += 5;
+    doc.text(`Materiais sem Custo: ${noCost.length}`, 20, yPos);
+    
+    // Tabela detalhada
+    yPos += 10;
+    doc.autoTable({
+        startY: yPos,
+        head: [['Nome', 'Qtd', 'Un', 'Custo Unit.', 'Total']],
+        body: withCost
+            .sort((a, b) => (b.quantity * b.cost) - (a.quantity * a.cost))
+            .map(p => [
+                p.name,
+                p.quantity,
+                p.unit,
+                `R$ ${(p.cost || 0).toFixed(2)}`,
+                `R$ ${(p.quantity * (p.cost || 0)).toFixed(2)}`
+            ]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [40, 167, 69] },
+        alternateRowStyles: { fillColor: [245, 245, 245] },
+        foot: [[
+            'TOTAL',
+            '',
+            '',
+            '',
+            `R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        ]],
+        footStyles: { fillColor: [40, 167, 69], textColor: [255, 255, 255], fontStyle: 'bold' }
+    });
+    
+    addPDFFooter(doc);
+    doc.save(`Relatorio_Financeiro_${getDateString()}.pdf`);
+    alert('✅ Relatório financeiro gerado!');
+}
+
+// 5. EXPORTAR DASHBOARD
+function exportDashboardToPDF() {
+    const doc = createPDF();
+    let yPos = addPDFHeader(doc, 'Dashboard do Estoque');
+    
+    // Cards de estatísticas
+    yPos += 10;
+    const stats = [
+        ['Total de Materiais', products.length],
+        ['Valor Total', `R$ ${products.reduce((sum, p) => sum + (p.quantity * (p.cost || 0)), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`],
+        ['Estoque Baixo', products.filter(p => p.quantity > 0 && p.quantity <= p.minQuantity).length],
+        ['Esgotados', products.filter(p => p.quantity === 0).length]
+    ];
+    
+    doc.autoTable({
+        startY: yPos,
+        head: [['Indicador', 'Valor']],
+        body: stats,
+        styles: { fontSize: 11 },
+        headStyles: { fillColor: [52, 152, 219] },
+        columnStyles: {
+            0: { fontStyle: 'bold' },
+            1: { halign: 'right', fontStyle: 'bold', fontSize: 14 }
+        }
+    });
+    
+    // Top 10 materiais
+    yPos = doc.lastAutoTable.finalY + 15;
+    doc.setFontSize(12);
+    doc.text('🔝 Top 10 Materiais (Valor)', 15, yPos);
+    
+    const top10 = products
+        .map(p => ({ name: p.name, value: p.quantity * (p.cost || 0) }))
+        .filter(p => p.value > 0)
+        .sort((a, b) => b.value - a.value)
+        .slice(0, 10);
+    
+    yPos += 5;
+    doc.autoTable({
+        startY: yPos,
+        head: [['Posição', 'Material', 'Valor Total']],
+        body: top10.map((p, index) => [
+            `${index + 1}º`,
+            p.name,
+            `R$ ${p.value.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`
+        ]),
+        styles: { fontSize: 9 },
+        headStyles: { fillColor: [23, 162, 184] }
+    });
+    
+    addPDFFooter(doc);
+    doc.save(`Dashboard_${getDateString()}.pdf`);
+    alert('✅ Dashboard exportado em PDF!');
+}
+
+// Função auxiliar para ícone do tipo
+function getTypeIcon(type) {
+    const icons = {
+        'Cimento e Argamassa': '🏗️',
+        'Areia e Brita': '⛰️',
+        'Tijolos e Blocos': '🧱',
+        'Ferragens': '🔩',
+        'Hidráulica': '🚰',
+        'Elétrica': '⚡',
+        'Tintas e Vernizes': '🎨',
+        'Madeiras': '🪵',
+        'Ferramentas': '🔨',
+        'Acabamento': '✨',
+        'Outros': '📦'
+    };
+    
+    // Verificar se é tipo customizado
+    const customType = customTypes.find(t => t.name === type);
+    if (customType) {
+        return customType.icon || '📦';
+    }
+    
+    return icons[type] || '📦';
+}
+

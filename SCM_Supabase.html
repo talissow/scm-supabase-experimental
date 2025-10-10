@@ -3,13 +3,18 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCM - Sistema de Controle de Materiais v1.1.0</title>
+    <title>SCM - Sistema de Controle de Materiais v1.2.0</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
     <link rel="stylesheet" href="styles.css">
     <!-- SheetJS para manipulação de XLSX via CDN -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
     <!-- Supabase para backend em nuvem -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Chart.js para gráficos do dashboard -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <!-- jsPDF para geração de relatórios PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.7.1/jspdf.plugin.autotable.min.js"></script>
     <!-- Scripts de autenticação -->
     <script src="supabase-config.js"></script>
     <script src="auth.js"></script>
@@ -177,14 +182,105 @@
                     <button class="btn btn-danger" id="clearAllBtn" title="Limpar todo o estoque">
                         🗑️ Limpar Estoque
                     </button>
+
+                    <div class="dropdown">
+                        <button class="btn btn-danger" style="background-color: #e74c3c;">📄 Relatórios PDF</button>
+                        <div class="dropdown-content">
+                            <a href="#" onclick="exportFullReportToPDF(); return false;">Relatório Completo</a>
+                            <a href="#" onclick="exportLowStockToPDF(); return false;">Materiais em Falta</a>
+                            <a href="#" onclick="exportByCategoryToPDF(); return false;">Por Categoria</a>
+                            <a href="#" onclick="exportFinancialToPDF(); return false;">Relatório Financeiro</a>
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- Abas de Visualização -->
             <section class="tabs-section">
                 <div class="tabs">
+                    <button class="tab-button" data-tab="dashboard">📊 Dashboard</button>
                     <button class="tab-button active" data-tab="list">📋 Lista Completa</button>
                     <button class="tab-button" data-tab="grouped">📦 Agrupado por Tipo</button>
+                </div>
+
+                <!-- Aba: Dashboard -->
+                <div id="dashboardTab" class="tab-content">
+                    <div class="dashboard-header">
+                        <h2>📊 Dashboard do Estoque</h2>
+                        <button class="btn btn-danger" onclick="exportDashboardToPDF()">
+                            📄 Exportar Dashboard PDF
+                        </button>
+                    </div>
+
+                    <!-- Cards de Estatísticas -->
+                    <div class="dashboard-stats">
+                        <div class="stat-card stat-primary">
+                            <div class="stat-icon">📦</div>
+                            <div class="stat-content">
+                                <h3>Total de Materiais</h3>
+                                <p class="stat-value" id="statTotalMaterials">0</p>
+                                <span class="stat-label">itens cadastrados</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card stat-success">
+                            <div class="stat-icon">💰</div>
+                            <div class="stat-content">
+                                <h3>Valor Total</h3>
+                                <p class="stat-value" id="statTotalValue">R$ 0,00</p>
+                                <span class="stat-label">em estoque</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card stat-warning">
+                            <div class="stat-icon">⚠️</div>
+                            <div class="stat-content">
+                                <h3>Estoque Baixo</h3>
+                                <p class="stat-value" id="statLowStock">0</p>
+                                <span class="stat-label">materiais críticos</span>
+                            </div>
+                        </div>
+
+                        <div class="stat-card stat-danger">
+                            <div class="stat-icon">❌</div>
+                            <div class="stat-content">
+                                <h3>Esgotados</h3>
+                                <p class="stat-value" id="statOutOfStock">0</p>
+                                <span class="stat-label">sem estoque</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos -->
+                    <div class="dashboard-charts">
+                        <div class="chart-card">
+                            <h3>📊 Materiais por Categoria</h3>
+                            <canvas id="categoryChart"></canvas>
+                        </div>
+
+                        <div class="chart-card">
+                            <h3>💰 Valor por Categoria</h3>
+                            <canvas id="valueChart"></canvas>
+                        </div>
+                    </div>
+
+                    <div class="dashboard-charts">
+                        <div class="chart-card">
+                            <h3>📈 Status do Estoque</h3>
+                            <canvas id="statusChart"></canvas>
+                        </div>
+
+                        <div class="chart-card">
+                            <h3>🔝 Top 10 Materiais (Valor)</h3>
+                            <canvas id="topMaterialsChart"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Materiais Críticos -->
+                    <div class="critical-materials">
+                        <h3>⚠️ Materiais que Precisam de Atenção</h3>
+                        <div id="criticalMaterialsList"></div>
+                    </div>
                 </div>
 
                 <!-- Aba: Lista Completa -->
