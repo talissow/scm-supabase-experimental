@@ -1051,6 +1051,27 @@ function switchTab(tabName) {
     } else if (tabName === 'grouped') {
         document.getElementById('groupedTab').classList.add('active');
         renderGroupedView();
+    } else if (tabName === 'dashboard') {
+        document.getElementById('dashboardTab').classList.add('active');
+        renderDashboard();
+    }
+    
+    // Atualizar URL no browser (se router estiver disponível)
+    if (window.scmRouter) {
+        const routes = {
+            'dashboard': '/dashboard',
+            'list': '/lista', 
+            'grouped': '/agrupado'
+        };
+        
+        if (routes[tabName]) {
+            window.history.pushState({ route: routes[tabName] }, '', routes[tabName]);
+        }
+    }
+    
+    // Atualizar breadcrumbs (se router estiver disponível)
+    if (window.scmRouter && window.scmRouter.updateBreadcrumbs) {
+        window.scmRouter.updateBreadcrumbs();
     }
 }
 

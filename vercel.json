@@ -5,7 +5,31 @@
       "destination": "/login.html"
     },
     {
-      "source": "/((?!login\\.html|index\\.html|admin-interno\\.html|styles\\.css|app\\.js|db\\.js|auth\\.js|supabase-config\\.js|supabase-adapter\\.js|TESTE_.*\\.html|CRIAR_ADMIN\\.html).*)",
+      "source": "/login",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/dashboard",
+      "destination": "/SCM_Supabase.html"
+    },
+    {
+      "source": "/lista",
+      "destination": "/SCM_Supabase.html"
+    },
+    {
+      "source": "/agrupado",
+      "destination": "/SCM_Supabase.html"
+    },
+    {
+      "source": "/usuarios",
+      "destination": "/usuarios.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin-interno.html"
+    },
+    {
+      "source": "/((?!login\\.html|index\\.html|admin-interno\\.html|styles\\.css|app\\.js|db\\.js|auth\\.js|supabase-config\\.js|supabase-adapter\\.js|router\\.js|auth-guard\\.js|TESTE_.*\\.html|CRIAR_ADMIN\\.html).*)",
       "destination": "/login.html"
     }
   ]

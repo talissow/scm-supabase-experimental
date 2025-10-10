@@ -277,7 +277,9 @@
             console.log('Supabase inicializado:', supabaseInitialized);
             
             if (supabaseInitialized && await auth.init()) {
-                window.location.href = 'SCM_Supabase.html';
+                // Marcar que o usuário passou pelo processo de login
+                sessionStorage.setItem('scm_authenticated_via_login', 'true');
+                window.location.href = '/dashboard';
             }
         });
 
@@ -328,7 +330,9 @@
                 if (result.success) {
                     showSuccess('Login realizado com sucesso! Redirecionando...');
                     setTimeout(() => {
-                        window.location.href = 'SCM_Supabase.html';
+                        // Marcar que o usuário passou pelo processo de login
+                        sessionStorage.setItem('scm_authenticated_via_login', 'true');
+                        window.location.href = '/dashboard';
                     }, 1500);
                 } else {
                     showError('password', result.error);
