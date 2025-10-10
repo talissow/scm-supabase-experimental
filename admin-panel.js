@@ -3,26 +3,59 @@
 // Verificar se usuário é admin e mostrar elementos
 async function checkAdminAccess() {
     try {
+        console.log('🔍 Verificando acesso de admin...');
+        
         if (typeof auth !== 'undefined' && typeof auth.isUserAdmin === 'function') {
             const isAdmin = await auth.isUserAdmin();
+            console.log('🧪 Resultado isUserAdmin():', isAdmin);
             
             if (isAdmin) {
                 // Mostrar botão admin no header
                 const adminButton = document.getElementById('adminButton');
                 if (adminButton) {
                     adminButton.style.display = 'block';
+                    console.log('✅ Botão admin exibido');
                 }
                 
                 // Mostrar aba admin
                 const adminTab = document.querySelector('[data-tab="admin"]');
                 if (adminTab) {
                     adminTab.style.display = 'block';
+                    console.log('✅ Aba admin exibida');
                 }
                 
                 console.log('✅ Acesso de administrador concedido');
             } else {
                 console.log('ℹ️ Usuário não é administrador');
+                
+                // Diagnóstico adicional
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    console.log('🔍 Dados da sessão:', {
+                        userId: session.user.id,
+                        email: session.user.email
+                    });
+                    
+                    // Verificar se existe na tabela users
+                    const { data: userData, error } = await supabaseClient
+                        .from('users')
+                        .select('*')
+                        .eq('id', session.user.id)
+                        .single();
+                    
+                    if (error) {
+                        console.log('❌ Usuário não encontrado na tabela users:', error.message);
+                        console.log('💡 Execute: fixAdminUser() no console para corrigir');
+                    } else {
+                        console.log('👤 Dados do usuário na tabela:', userData);
+                        if (userData.role !== 'admin') {
+                            console.log('💡 Role atual:', userData.role, '- Execute: fixAdminUser() para corrigir');
+                        }
+                    }
+                }
             }
+        } else {
+            console.error('❌ Função auth.isUserAdmin não disponível');
         }
     } catch (error) {
         console.error('❌ Erro ao verificar acesso de admin:', error);
@@ -155,6 +188,85 @@ function closeUserModal() {
 function closeDeleteUserModal() {
     document.getElementById('deleteUserModal').style.display = 'none';
 }
+
+// Função para corrigir usuário admin (disponível globalmente)
+async function fixAdminUser() {
+    console.log('🔧 Iniciando correção do usuário admin...');
+    
+    try {
+        const { data: { session } } = await supabaseClient.auth.getSession();
+        
+        if (!session) {
+            console.error('❌ Nenhuma sessão ativa');
+            return;
+        }
+        
+        console.log('👤 Dados da sessão:', {
+            userId: session.user.id,
+            email: session.user.email,
+            name: session.user.user_metadata?.full_name
+        });
+        
+        // Verificar se já existe na tabela users
+        const { data: existingUser } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('email', session.user.email)
+            .single();
+        
+        if (existingUser) {
+            console.log('📝 Usuário existe, atualizando...');
+            // Atualizar usuário existente
+            const { error: updateError } = await supabaseClient
+                .from('users')
+                .update({
+                    id: session.user.id,
+                    full_name: session.user.user_metadata?.full_name || 'Talisson Sousa de Santana',
+                    role: 'admin',
+                    is_active: true
+                })
+                .eq('email', session.user.email);
+            
+            if (updateError) {
+                console.error('❌ Erro ao atualizar usuário:', updateError);
+                return;
+            }
+            
+            console.log('✅ Usuário atualizado com sucesso!');
+        } else {
+            console.log('➕ Usuário não existe, criando...');
+            // Criar novo usuário
+            const { error: insertError } = await supabaseClient
+                .from('users')
+                .insert({
+                    id: session.user.id,
+                    email: session.user.email,
+                    full_name: session.user.user_metadata?.full_name || 'Talisson Sousa de Santana',
+                    role: 'admin',
+                    is_active: true
+                });
+            
+            if (insertError) {
+                console.error('❌ Erro ao criar usuário:', insertError);
+                return;
+            }
+            
+            console.log('✅ Usuário criado com sucesso!');
+        }
+        
+        // Recarregar página para aplicar mudanças
+        console.log('🔄 Recarregando página em 3 segundos...');
+        setTimeout(() => {
+            window.location.reload();
+        }, 3000);
+        
+    } catch (error) {
+        console.error('❌ Erro inesperado na correção:', error);
+    }
+}
+
+// Tornar função disponível globalmente
+window.fixAdminUser = fixAdminUser;
 
 // Event listeners para admin
 document.addEventListener('DOMContentLoaded', () => {
