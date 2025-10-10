@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Administrador - SCM</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .admin-container {
+            max-width: 500px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            text-align: center;
+        }
+
+        .admin-header {
+            margin-bottom: 30px;
+        }
+
+        .admin-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .admin-header p {
+            color: #666;
+            margin: 0;
+        }
+
+        .warning-box {
+            background: #fff3cd;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #ffeaa7;
+        }
+
+        .warning-box strong {
+            color: #dc3545;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group input.error {
+            border-color: #e74c3c;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .create-admin-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-bottom: 20px;
+        }
+
+        .create-admin-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .create-admin-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            display: none;
+            color: #dc3545;
+            margin-top: 10px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+            display: none;
+        }
+
+        .error-message-box {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+            display: none;
+        }
+
+        .back-link {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            transition: background 0.3s ease;
+            display: inline-block;
+            margin-top: 20px;
+        }
+
+        .back-link:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .steps {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .steps h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .steps ol {
+            margin: 10px 0;
+            padding-left: 20px;
+        }
+
+        .steps li {
+            margin: 8px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>👑 Criar Administrador</h1>
+            <p>Sistema de Controle de Materiais</p>
+        </div>
+
+        <div class="warning-box">
+            <strong>⚠️ ATENÇÃO:</strong><br>
+            Esta ferramenta deve ser usada apenas para criar o <strong>PRIMEIRO</strong> administrador do sistema. 
+            Após criar o admin, use a página de gerenciamento de usuários para criar outros usuários.
+        </div>
+
+        <div class="steps">
+            <h3>📋 Passos:</h3>
+            <ol>
+                <li>Preencha os dados do administrador</li>
+                <li>Clique em "Criar Administrador"</li>
+                <li>Faça login com as credenciais criadas</li>
+                <li>Acesse "Gerenciar Usuários" para criar outros usuários</li>
+            </ol>
+        </div>
+
+        <div id="successMessage" class="success-message"></div>
+        <div id="errorMessage" class="error-message-box"></div>
+
+        <form id="createAdminForm">
+            <div class="form-group">
+                <label for="adminName">Nome Completo do Administrador:</label>
+                <input type="text" id="adminName" name="fullName" required>
+                <div class="error-message" id="adminNameError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="adminEmail">Email do Administrador:</label>
+                <input type="email" id="adminEmail" name="email" required>
+                <div class="error-message" id="adminEmailError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="adminPassword">Senha:</label>
+                <input type="password" id="adminPassword" name="password" required minlength="6">
+                <div class="error-message" id="adminPasswordError"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmAdminPassword">Confirmar Senha:</label>
+                <input type="password" id="confirmAdminPassword" name="confirmPassword" required>
+                <div class="error-message" id="confirmAdminPasswordError"></div>
+            </div>
+
+            <button type="submit" class="create-admin-button" id="createAdminButton">
+                👑 Criar Administrador
+            </button>
+
+            <div class="loading" id="createLoading">
+                🔄 Criando administrador...
+            </div>
+        </form>
+
+        <a href="login.html" class="back-link">← Voltar ao Login</a>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    
+    <script>
+        // Elementos do DOM
+        const createAdminForm = document.getElementById('createAdminForm');
+        const createAdminButton = document.getElementById('createAdminButton');
+        const createLoading = document.getElementById('createLoading');
+        const successMessage = document.getElementById('successMessage');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // Inicializar Supabase
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🔄 Inicializando Supabase...');
+            const supabaseInitialized = initSupabase();
+            console.log('Supabase inicializado:', supabaseInitialized);
+            
+            if (!supabaseInitialized) {
+                showError('Erro ao inicializar Supabase. Verifique a configuração.');
+            }
+        });
+
+        // Event Listeners
+        createAdminForm.addEventListener('submit', handleCreateAdmin);
+
+        // Função para criar administrador
+        async function handleCreateAdmin(e) {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('adminName').value;
+            const email = document.getElementById('adminEmail').value;
+            const password = document.getElementById('adminPassword').value;
+            const confirmPassword = document.getElementById('confirmAdminPassword').value;
+
+            // Validação
+            clearErrors();
+            let hasErrors = false;
+
+            if (!fullName.trim()) {
+                showFieldError('adminName', 'Nome é obrigatório');
+                hasErrors = true;
+            }
+
+            if (!email.trim()) {
+                showFieldError('adminEmail', 'Email é obrigatório');
+                hasErrors = true;
+            }
+
+            if (password.length < 6) {
+                showFieldError('adminPassword', 'Senha deve ter pelo menos 6 caracteres');
+                hasErrors = true;
+            }
+
+            if (password !== confirmPassword) {
+                showFieldError('confirmAdminPassword', 'Senhas não coincidem');
+                hasErrors = true;
+            }
+
+            if (hasErrors) return;
+
+            // UI Loading
+            createAdminButton.disabled = true;
+            createLoading.style.display = 'block';
+            hideMessages();
+
+            try {
+                console.log('🔄 Criando administrador:', email);
+
+                // 1. Criar usuário no Supabase Auth
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password,
+                    options: {
+                        data: {
+                            full_name: fullName
+                        }
+                    }
+                });
+
+                if (authError) {
+                    throw new Error(authError.message);
+                }
+
+                console.log('✅ Usuário criado no Supabase Auth:', authData);
+
+                // 2. Aguardar um pouco para garantir que o usuário foi criado
+                await new Promise(resolve => setTimeout(resolve, 1000));
+
+                // 3. Criar perfil na tabela users com role admin
+                const { error: profileError } = await supabaseClient
+                    .from('users')
+                    .insert({
+                        id: authData.user.id,
+                        email: email,
+                        full_name: fullName,
+                        role: 'admin',
+                        is_active: true
+                    });
+
+                if (profileError) {
+                    console.error('❌ Erro ao criar perfil:', profileError);
+                    // Se der erro no perfil, tentar fazer login e atualizar
+                    try {
+                        const { error: updateError } = await supabaseClient
+                            .from('users')
+                            .upsert({
+                                id: authData.user.id,
+                                email: email,
+                                full_name: fullName,
+                                role: 'admin',
+                                is_active: true
+                            });
+                        
+                        if (updateError) throw updateError;
+                    } catch (updateError) {
+                        throw new Error('Erro ao criar perfil de administrador: ' + updateError.message);
+                    }
+                }
+
+                console.log('✅ Perfil de administrador criado');
+
+                // 4. Sucesso
+                showSuccess(`
+                    <h3>🎉 Administrador Criado com Sucesso!</h3>
+                    <p><strong>Nome:</strong> ${fullName}</p>
+                    <p><strong>Email:</strong> ${email}</p>
+                    <p><strong>Função:</strong> Administrador</p>
+                    <br>
+                    <p><strong>Próximos passos:</strong></p>
+                    <ol style="text-align: left; display: inline-block;">
+                        <li>Faça login com as credenciais criadas</li>
+                        <li>Acesse "Gerenciar Usuários" no sistema</li>
+                        <li>Crie outros usuários conforme necessário</li>
+                    </ol>
+                `);
+
+                // Limpar formulário
+                createAdminForm.reset();
+
+                // Desabilitar o botão para evitar duplicação
+                createAdminButton.disabled = true;
+                createAdminButton.textContent = '✅ Administrador Criado';
+
+            } catch (error) {
+                console.error('❌ Erro ao criar administrador:', error);
+                showError('Erro ao criar administrador: ' + error.message);
+            } finally {
+                createLoading.style.display = 'none';
+                if (!createAdminButton.disabled) {
+                    createAdminButton.disabled = false;
+                }
+            }
+        }
+
+        // Funções auxiliares
+        function showFieldError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorDiv = document.getElementById(fieldId + 'Error');
+            
+            field.classList.add('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function clearErrors() {
+            const errorMessages = document.querySelectorAll('.error-message');
+            const errorFields = document.querySelectorAll('input.error');
+            
+            errorMessages.forEach(msg => {
+                msg.style.display = 'none';
+                msg.textContent = '';
+            });
+            
+            errorFields.forEach(field => {
+                field.classList.remove('error');
+            });
+        }
+
+        function showSuccess(message) {
+            successMessage.innerHTML = message;
+            successMessage.style.display = 'block';
+            errorMessage.style.display = 'none';
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+
+        function hideMessages() {
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+        }
+    </script>
+</body>
+</html>

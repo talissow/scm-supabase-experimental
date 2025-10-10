@@ -46,18 +46,29 @@ Execute o arquivo `supabase_schema.sql` no SQL Editor do Supabase para criar:
 
 ### 3. Criar Primeiro Usuário Admin
 
-Após configurar o Supabase, você precisa criar manualmente o primeiro usuário admin:
+Após configurar o Supabase, você tem várias opções para criar o primeiro usuário admin:
 
-#### Opção 1: Via SQL (Recomendado)
+#### Opção 1: Via Interface Web (Recomendado)
+1. Abra `CRIAR_ADMIN.html` no navegador
+2. Preencha os dados do administrador:
+   - Nome completo
+   - Email
+   - Senha (mínimo 6 caracteres)
+   - Confirmar senha
+3. Clique em **"👑 Criar Administrador"**
+4. Aguarde a confirmação de sucesso
+5. Faça login com as credenciais criadas
+
+#### Opção 2: Via SQL (Manual)
 ```sql
--- Inserir usuário admin na tabela users
--- (O usuário já deve existir no auth.users via registro)
+-- Primeiro, criar usuário no auth.users via registro normal
+-- Depois, atualizar role para admin
 UPDATE users 
 SET role = 'admin' 
 WHERE email = 'seu-email@exemplo.com';
 ```
 
-#### Opção 2: Via Painel Supabase
+#### Opção 3: Via Painel Supabase
 1. Vá em **Authentication** → **Users**
 2. Clique em **Add user**
 3. Preencha email e senha
