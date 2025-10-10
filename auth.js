@@ -90,6 +90,12 @@ async function logout() {
 // Registrar novo usuário
 async function signUp(email, password, fullName) {
     try {
+        console.log('🔄 Tentando registrar usuário:', email);
+        
+        if (!supabaseClient) {
+            throw new Error('Supabase client não inicializado');
+        }
+
         const { data, error } = await supabaseClient.auth.signUp({
             email: email,
             password: password,
@@ -105,12 +111,12 @@ async function signUp(email, password, fullName) {
             return { success: false, error: error.message };
         }
 
-        console.log('✅ Registro realizado com sucesso');
+        console.log('✅ Registro realizado com sucesso:', data);
         return { success: true, user: data.user };
         
     } catch (error) {
         console.error('❌ Erro inesperado no registro:', error);
-        return { success: false, error: 'Erro inesperado' };
+        return { success: false, error: error.message || 'Erro inesperado' };
     }
 }
 

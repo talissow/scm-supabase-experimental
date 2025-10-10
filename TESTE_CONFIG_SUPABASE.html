@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Configuração Supabase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .error { color: red; }
+        .success { color: green; }
+        .warning { color: orange; }
+        pre { background: #f0f0f0; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Teste de Configuração Supabase</h1>
+    
+    <div class="test-section">
+        <h2>1. Verificar Configuração</h2>
+        <button onclick="checkConfig()">Verificar Config</button>
+        <div id="configResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>2. Testar Conexão com Banco</h2>
+        <button onclick="testDatabaseConnection()">Testar Conexão</button>
+        <div id="dbResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>3. Testar Autenticação</h2>
+        <button onclick="testAuth()">Testar Auth</button>
+        <div id="authResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>4. Registrar Usuário de Teste</h2>
+        <button onclick="testSignUp()">Testar Registro</button>
+        <div id="signupResult"></div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    
+    <script>
+        function showResult(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        function checkConfig() {
+            try {
+                let configInfo = '<h3>Configuração Atual:</h3>';
+                
+                if (typeof supabaseClient === 'undefined') {
+                    configInfo += '<div class="error">❌ supabaseClient não definido</div>';
+                } else {
+                    configInfo += '<div class="success">✅ supabaseClient definido</div>';
+                }
+
+                if (typeof SUPABASE_URL === 'undefined') {
+                    configInfo += '<div class="error">❌ SUPABASE_URL não definido</div>';
+                } else {
+                    configInfo += `<div class="success">✅ SUPABASE_URL: ${SUPABASE_URL}</div>`;
+                }
+
+                if (typeof SUPABASE_ANON_KEY === 'undefined') {
+                    configInfo += '<div class="error">❌ SUPABASE_ANON_KEY não definido</div>';
+                } else {
+                    configInfo += `<div class="success">✅ SUPABASE_ANON_KEY: ${SUPABASE_ANON_KEY.substring(0, 20)}...</div>`;
+                }
+
+                // Verificar se o client foi inicializado
+                if (supabaseClient) {
+                    configInfo += '<div class="success">✅ Supabase client inicializado</div>';
+                } else {
+                    configInfo += '<div class="error">❌ Supabase client não inicializado</div>';
+                }
+
+                showResult('configResult', configInfo);
+            } catch (error) {
+                showResult('configResult', `<div class="error">❌ Erro: ${error.message}</div>`, 'error');
+            }
+        }
+
+        async function testDatabaseConnection() {
+            try {
+                showResult('dbResult', '🔄 Testando conexão...', 'warning');
+                
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('count')
+                    .limit(1);
+
+                if (error) {
+                    showResult('dbResult', `<div class="error">❌ Erro de conexão: ${error.message}</div>`, 'error');
+                } else {
+                    showResult('dbResult', '<div class="success">✅ Conexão com banco OK</div>', 'success');
+                }
+            } catch (error) {
+                showResult('dbResult', `<div class="error">❌ Erro inesperado: ${error.message}</div>`, 'error');
+            }
+        }
+
+        async function testAuth() {
+            try {
+                showResult('authResult', '🔄 Testando autenticação...', 'warning');
+                
+                const { data: { session }, error } = await supabaseClient.auth.getSession();
+                
+                if (error) {
+                    showResult('authResult', `<div class="error">❌ Erro na autenticação: ${error.message}</div>`, 'error');
+                } else {
+                    if (session) {
+                        showResult('authResult', `<div class="success">✅ Sessão ativa: ${session.user.email}</div>`, 'success');
+                    } else {
+                        showResult('authResult', '<div class="warning">⚠️ Nenhuma sessão ativa</div>', 'warning');
+                    }
+                }
+            } catch (error) {
+                showResult('authResult', `<div class="error">❌ Erro inesperado: ${error.message}</div>`, 'error');
+            }
+        }
+
+        async function testSignUp() {
+            try {
+                showResult('signupResult', '🔄 Testando registro...', 'warning');
+                
+                const testEmail = `teste-${Date.now()}@exemplo.com`;
+                const testPassword = '123456';
+                const testName = 'Usuário Teste';
+
+                console.log('Tentando registrar:', testEmail);
+
+                const { data, error } = await supabaseClient.auth.signUp({
+                    email: testEmail,
+                    password: testPassword,
+                    options: {
+                        data: {
+                            full_name: testName
+                        }
+                    }
+                });
+
+                if (error) {
+                    showResult('signupResult', `<div class="error">❌ Erro no registro: ${error.message}</div>`, 'error');
+                    console.error('Erro detalhado:', error);
+                } else {
+                    showResult('signupResult', `<div class="success">✅ Registro OK! User ID: ${data.user?.id}</div>`, 'success');
+                    console.log('Registro bem-sucedido:', data);
+                }
+            } catch (error) {
+                showResult('signupResult', `<div class="error">❌ Erro inesperado: ${error.message}</div>`, 'error');
+                console.error('Erro inesperado:', error);
+            }
+        }
+
+        // Executar verificação inicial
+        document.addEventListener('DOMContentLoaded', () => {
+            checkConfig();
+        });
+    </script>
+</body>
+</html>
