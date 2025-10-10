@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Importação - SCM + Supabase</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .csv-content { background: #f8f9fa; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; margin: 10px 0; }
+        #log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📥 Teste de Importação - SCM + Supabase</h1>
+        
+        <div class="test-section">
+            <h3>📊 Status do Sistema</h3>
+            <span id="systemStatus" class="test-result info">Verificando...</span>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Gerar CSV de Teste</h3>
+            <button onclick="generateTestCSV()">Gerar CSV de Teste</button>
+            <button onclick="downloadTestCSV()">Baixar CSV de Teste</button>
+            <div id="csvPreview"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📦 Teste de Importação</h3>
+            <input type="file" id="csvFile" accept=".csv" style="margin: 10px 0;">
+            <button onclick="testImport()">Testar Importação</button>
+            <button onclick="checkProducts()">Verificar Produtos</button>
+            <div id="importResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Log de Testes</h3>
+            <button onclick="clearLog()">Limpar Log</button>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    
+    <script>
+        let logDiv = document.getElementById('log');
+        let systemStatus = document.getElementById('systemStatus');
+        let supabaseClient = null;
+        let testCSVData = null;
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}\n`;
+            logDiv.textContent += logMessage;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            logDiv.textContent = '';
+        }
+        
+        function showResult(containerId, message, type) {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.innerHTML = message;
+            container.appendChild(result);
+        }
+        
+        // Inicializar
+        function init() {
+            log('🚀 Iniciando teste de importação...');
+            
+            if (typeof supabase === 'undefined' || !isSupabaseConfigured()) {
+                systemStatus.textContent = '❌ Supabase não configurado';
+                systemStatus.className = 'test-result error';
+                log('❌ Supabase não configurado');
+                return;
+            }
+            
+            if (initSupabase()) {
+                supabaseClient = window.supabaseClient;
+                systemStatus.textContent = '🟢 Supabase configurado - pronto para importação';
+                systemStatus.className = 'test-result success';
+                log('🟢 Supabase inicializado');
+            } else {
+                systemStatus.textContent = '❌ Erro ao inicializar Supabase';
+                systemStatus.className = 'test-result error';
+                log('❌ Erro ao inicializar Supabase');
+            }
+        }
+        
+        // Gerar CSV de teste
+        function generateTestCSV() {
+            log('📝 Gerando CSV de teste...');
+            
+            const testProducts = [
+                ['Nome do Material', 'Tipo', 'Descrição', 'Quantidade', 'Quantidade Mínima', 'Unidade'],
+                ['Parafuso M6x20', 'Parafusos', 'Parafuso métrico 6mm x 20mm', '100', '20', 'unid'],
+                ['Arruela Plana 6mm', 'Arruelas', 'Arruela plana para parafuso 6mm', '200', '50', 'unid'],
+                ['Porca M6', 'Porcas', 'Porca métrica 6mm', '150', '30', 'unid'],
+                ['Cabo Elétrico 2.5mm', 'Cabos', 'Cabo elétrico flexível 2.5mm²', '50', '10', 'metro'],
+                ['Fita Isolante', 'Isolantes', 'Fita isolante preta', '20', '5', 'rolo']
+            ];
+            
+            testCSVData = testProducts.map(row => row.join(',')).join('\n');
+            
+            const preview = document.getElementById('csvPreview');
+            preview.innerHTML = `
+                <div class="csv-content">
+                    <strong>CSV de Teste Gerado:</strong><br>
+                    ${testCSVData.replace(/\n/g, '<br>')}
+                </div>
+            `;
+            
+            log('✅ CSV de teste gerado com 5 produtos');
+            showResult('importResults', '✅ CSV de teste gerado com 5 produtos', 'success');
+        }
+        
+        // Baixar CSV de teste
+        function downloadTestCSV() {
+            if (!testCSVData) {
+                showResult('importResults', '⚠️ Gere o CSV primeiro!', 'warning');
+                return;
+            }
+            
+            const blob = new Blob([testCSVData], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', 'materiais_teste.csv');
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            log('📥 CSV de teste baixado');
+            showResult('importResults', '📥 CSV de teste baixado com sucesso!', 'success');
+        }
+        
+        // Testar importação
+        async function testImport() {
+            const fileInput = document.getElementById('csvFile');
+            const file = fileInput.files[0];
+            
+            if (!file) {
+                showResult('importResults', '⚠️ Selecione um arquivo CSV!', 'warning');
+                return;
+            }
+            
+            log('📥 Testando importação de CSV...');
+            
+            if (!supabaseClient) {
+                showResult('importResults', '❌ Supabase não inicializado', 'error');
+                return;
+            }
+            
+            try {
+                const text = await file.text();
+                const lines = text.split('\n');
+                
+                if (lines.length < 2) {
+                    throw new Error('CSV vazio ou inválido');
+                }
+                
+                const products = [];
+                
+                // Processar linhas (pular cabeçalho)
+                for (let i = 1; i < lines.length; i++) {
+                    const line = lines[i].trim();
+                    if (!line) continue;
+                    
+                    const values = line.split(',');
+                    if (values.length >= 6) {
+                        products.push({
+                            id: `import_test_${Date.now()}_${i}`,
+                            name: values[0],
+                            description: values[2],
+                            type: values[1],
+                            quantity: parseInt(values[3]) || 0,
+                            min_quantity: parseInt(values[4]) || 0,
+                            unit: values[5]
+                        });
+                    }
+                }
+                
+                if (products.length === 0) {
+                    throw new Error('Nenhum produto válido encontrado');
+                }
+                
+                // Inserir no Supabase
+                const supabaseProducts = products.map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    description: p.description,
+                    type: p.type,
+                    quantity: p.quantity,
+                    min_quantity: p.min_quantity,
+                    unit: p.unit,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                }));
+                
+                const { error } = await supabaseClient
+                    .from('products')
+                    .insert(supabaseProducts);
+                
+                if (error) throw error;
+                
+                showResult('importResults', `✅ ${products.length} produtos importados com sucesso!`, 'success');
+                log(`🟢 ${products.length} produtos importados para o Supabase`);
+                
+            } catch (error) {
+                showResult('importResults', `❌ Erro na importação: ${error.message}`, 'error');
+                log(`❌ Erro na importação: ${error.message}`);
+            }
+        }
+        
+        // Verificar produtos
+        async function checkProducts() {
+            log('📦 Verificando produtos no Supabase...');
+            
+            if (!supabaseClient) {
+                showResult('importResults', '❌ Supabase não inicializado', 'error');
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('id, name, quantity')
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+                
+                if (error) throw error;
+                
+                if (data.length === 0) {
+                    showResult('importResults', '📝 Nenhum produto encontrado', 'info');
+                } else {
+                    const productList = data.map(p => `• ${p.name} (${p.quantity} unidades)`).join('<br>');
+                    showResult('importResults', `📦 Últimos produtos:<br>${productList}`, 'info');
+                }
+                
+                log(`🟢 ${data.length} produtos encontrados no Supabase`);
+                
+            } catch (error) {
+                showResult('importResults', `❌ Erro ao verificar: ${error.message}`, 'error');
+                log(`❌ Erro ao verificar produtos: ${error.message}`);
+            }
+        }
+        
+        // Inicializar quando carregar
+        window.addEventListener('load', () => {
+            setTimeout(init, 500);
+        });
+    </script>
+</body>
+</html>

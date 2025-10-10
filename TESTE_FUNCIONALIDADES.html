@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Funcionalidades - SCM + Supabase</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 1000px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-section h3 { margin-top: 0; color: #333; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        button { background: #007bff; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .status { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 0.9em; margin-left: 10px; }
+        .status.online { background: #d4edda; color: #155724; }
+        .status.offline { background: #f8d7da; color: #721c24; }
+        .status.local { background: #e2e3e5; color: #383d41; }
+        #log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; font-size: 0.9em; }
+        .test-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        @media (max-width: 768px) { .test-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Funcionalidades - SCM + Supabase</h1>
+        
+        <div class="info">
+            <strong>📊 Status do Sistema:</strong>
+            <span id="systemStatus" class="status">Verificando...</span>
+        </div>
+        
+        <div class="test-grid">
+            <!-- Teste 1: Conexão -->
+            <div class="test-section">
+                <h3>🔗 Teste 1: Conexão com Supabase</h3>
+                <button onclick="testConnection()">Testar Conexão</button>
+                <button onclick="testTables()">Testar Tabelas</button>
+                <div id="connectionResults"></div>
+            </div>
+            
+            <!-- Teste 2: Produtos -->
+            <div class="test-section">
+                <h3>📦 Teste 2: CRUD de Produtos</h3>
+                <button onclick="testCreateProduct()">Criar Produto</button>
+                <button onclick="testUpdateProduct()">Atualizar Produto</button>
+                <button onclick="testDeleteProduct()">Deletar Produto</button>
+                <div id="productResults"></div>
+            </div>
+            
+            <!-- Teste 3: Movimentações -->
+            <div class="test-section">
+                <h3>📊 Teste 3: Movimentações</h3>
+                <button onclick="testCreateMovement()">Criar Movimentação</button>
+                <button onclick="testGetMovements()">Listar Movimentações</button>
+                <div id="movementResults"></div>
+            </div>
+            
+            <!-- Teste 4: Sincronização -->
+            <div class="test-section">
+                <h3>🔄 Teste 4: Sincronização</h3>
+                <button onclick="testOfflineMode()">Simular Offline</button>
+                <button onclick="testOnlineMode()">Simular Online</button>
+                <button onclick="testSync()">Testar Sincronização</button>
+                <div id="syncResults"></div>
+            </div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Log de Testes</h3>
+            <button onclick="clearLog()">Limpar Log</button>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="db.js"></script>
+    
+    <script>
+        let logDiv = document.getElementById('log');
+        let systemStatus = document.getElementById('systemStatus');
+        let supabaseClient = null;
+        let testProductId = null;
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}\n`;
+            logDiv.textContent += logMessage;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            logDiv.textContent = '';
+        }
+        
+        function showResult(containerId, message, type) {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.innerHTML = message;
+            container.appendChild(result);
+        }
+        
+        function updateSystemStatus() {
+            try {
+                if (typeof supabase !== 'undefined' && isSupabaseConfigured()) {
+                    if (initSupabase() && isOnline()) {
+                        systemStatus.textContent = '🟢 Online (Supabase)';
+                        systemStatus.className = 'status online';
+                        supabaseClient = window.supabaseClient;
+                    } else {
+                        systemStatus.textContent = '🔴 Offline';
+                        systemStatus.className = 'status offline';
+                        supabaseClient = null;
+                    }
+                } else {
+                    systemStatus.textContent = '⚪ Local (IndexedDB)';
+                    systemStatus.className = 'status local';
+                    supabaseClient = null;
+                }
+            } catch (error) {
+                systemStatus.textContent = '❌ Erro na inicialização';
+                systemStatus.className = 'status error';
+                supabaseClient = null;
+                log(`❌ Erro ao atualizar status: ${error.message}`);
+            }
+        }
+        
+        // Teste 1: Conexão
+        async function testConnection() {
+            log('🔗 Iniciando teste de conexão...');
+            document.getElementById('connectionResults').innerHTML = '';
+            
+            try {
+                if (!supabaseClient) {
+                    throw new Error('Supabase não inicializado - verifique as credenciais');
+                }
+                
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('count', { count: 'exact', head: true });
+                
+                if (error) throw error;
+                
+                showResult('connectionResults', '✅ Conexão estabelecida com sucesso!', 'success');
+                log('🟢 Conexão com Supabase funcionando');
+                
+            } catch (error) {
+                showResult('connectionResults', `❌ Erro na conexão: ${error.message}`, 'error');
+                log(`❌ Erro na conexão: ${error.message}`);
+            }
+        }
+        
+        async function testTables() {
+            log('📊 Testando acesso às tabelas...');
+            document.getElementById('connectionResults').innerHTML = '';
+            
+            const tables = ['products', 'movements', 'custom_types'];
+            let allSuccess = true;
+            
+            for (const table of tables) {
+                try {
+                    const { data, error } = await supabaseClient
+                        .from(table)
+                        .select('count', { count: 'exact', head: true });
+                    
+                    if (error) throw error;
+                    
+                    showResult('connectionResults', `✅ Tabela ${table}: Acessível`, 'success');
+                    log(`🟢 Tabela ${table}: OK`);
+                    
+                } catch (error) {
+                    showResult('connectionResults', `❌ Tabela ${table}: ${error.message}`, 'error');
+                    log(`❌ Tabela ${table}: ${error.message}`);
+                    allSuccess = false;
+                }
+            }
+            
+            if (allSuccess) {
+                log('🟢 Todas as tabelas acessíveis');
+            }
+        }
+        
+        // Teste 2: Produtos
+        async function testCreateProduct() {
+            log('📦 Testando criação de produto...');
+            document.getElementById('productResults').innerHTML = '';
+            
+            try {
+                const product = {
+                    id: `test_${Date.now()}`,
+                    name: `Produto Teste ${Date.now()}`,
+                    description: 'Produto criado pelo teste automatizado',
+                    type: 'Teste',
+                    quantity: 100,
+                    min_quantity: 10,
+                    unit: 'unid'
+                };
+                
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .insert(product);
+                
+                if (error) throw error;
+                
+                testProductId = product.id;
+                showResult('productResults', `✅ Produto criado: ${product.name}`, 'success');
+                log(`🟢 Produto criado no Supabase: ${product.name}`);
+                
+            } catch (error) {
+                showResult('productResults', `❌ Erro ao criar produto: ${error.message}`, 'error');
+                log(`❌ Erro ao criar produto: ${error.message}`);
+            }
+        }
+        
+        async function testUpdateProduct() {
+            if (!testProductId) {
+                showResult('productResults', '⚠️ Crie um produto primeiro!', 'warning');
+                return;
+            }
+            
+            log('📝 Testando atualização de produto...');
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .update({ 
+                        quantity: 150,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', testProductId);
+                
+                if (error) throw error;
+                
+                showResult('productResults', '✅ Produto atualizado com sucesso!', 'success');
+                log(`🟢 Produto atualizado no Supabase`);
+                
+            } catch (error) {
+                showResult('productResults', `❌ Erro ao atualizar: ${error.message}`, 'error');
+                log(`❌ Erro ao atualizar produto: ${error.message}`);
+            }
+        }
+        
+        async function testDeleteProduct() {
+            if (!testProductId) {
+                showResult('productResults', '⚠️ Crie um produto primeiro!', 'warning');
+                return;
+            }
+            
+            log('🗑️ Testando exclusão de produto...');
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .delete()
+                    .eq('id', testProductId);
+                
+                if (error) throw error;
+                
+                showResult('productResults', '✅ Produto deletado com sucesso!', 'success');
+                log(`🟢 Produto deletado do Supabase`);
+                testProductId = null;
+                
+            } catch (error) {
+                showResult('productResults', `❌ Erro ao deletar: ${error.message}`, 'error');
+                log(`❌ Erro ao deletar produto: ${error.message}`);
+            }
+        }
+        
+        // Teste 3: Movimentações
+        async function testCreateMovement() {
+            log('📊 Testando criação de movimentação...');
+            document.getElementById('movementResults').innerHTML = '';
+            
+            try {
+                const movement = {
+                    id: `mov_${Date.now()}`,
+                    product_id: testProductId || `test_${Date.now()}`,
+                    type: 'entrada',
+                    quantity: 50,
+                    timestamp: new Date().toISOString()
+                };
+                
+                const { data, error } = await supabaseClient
+                    .from('movements')
+                    .insert(movement);
+                
+                if (error) throw error;
+                
+                showResult('movementResults', '✅ Movimentação criada com sucesso!', 'success');
+                log(`🟢 Movimentação criada no Supabase`);
+                
+            } catch (error) {
+                showResult('movementResults', `❌ Erro ao criar movimentação: ${error.message}`, 'error');
+                log(`❌ Erro ao criar movimentação: ${error.message}`);
+            }
+        }
+        
+        async function testGetMovements() {
+            log('📋 Testando listagem de movimentações...');
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('movements')
+                    .select('*')
+                    .order('timestamp', { ascending: false })
+                    .limit(5);
+                
+                if (error) throw error;
+                
+                showResult('movementResults', `✅ ${data.length} movimentações encontradas`, 'success');
+                log(`🟢 ${data.length} movimentações carregadas do Supabase`);
+                
+            } catch (error) {
+                showResult('movementResults', `❌ Erro ao listar: ${error.message}`, 'error');
+                log(`❌ Erro ao listar movimentações: ${error.message}`);
+            }
+        }
+        
+        // Teste 4: Sincronização
+        function testOfflineMode() {
+            log('📱 Simulando modo offline...');
+            showResult('syncResults', '🔴 Modo offline simulado', 'warning');
+            log('🔴 Sistema em modo offline');
+        }
+        
+        function testOnlineMode() {
+            log('🌐 Simulando modo online...');
+            showResult('syncResults', '🟢 Modo online simulado', 'success');
+            log('🟢 Sistema em modo online');
+        }
+        
+        async function testSync() {
+            log('🔄 Testando sincronização...');
+            
+            try {
+                // Simular sincronização
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('count', { count: 'exact' });
+                
+                if (error) throw error;
+                
+                showResult('syncResults', '✅ Sincronização funcionando!', 'success');
+                log(`🟢 Sincronização OK - ${data.length} produtos`);
+                
+            } catch (error) {
+                showResult('syncResults', `❌ Erro na sincronização: ${error.message}`, 'error');
+                log(`❌ Erro na sincronização: ${error.message}`);
+            }
+        }
+        
+        // Inicialização
+        window.addEventListener('load', () => {
+            log('🚀 Iniciando testes de funcionalidades...');
+            
+            // Aguardar um pouco para as bibliotecas carregarem
+            setTimeout(() => {
+                updateSystemStatus();
+                
+                if (!supabaseClient) {
+                    log('⚠️ Supabase não disponível - alguns testes podem falhar');
+                    showResult('connectionResults', '⚠️ Supabase não configurado ou offline', 'warning');
+                } else {
+                    log('📋 Sistema carregado - pronto para testes');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

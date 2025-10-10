@@ -3,16 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SCM - Sistema de Controle de Materiais</title>
+    <title>SCM - Sistema de Controle de Materiais v1.1.0</title>
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
     <link rel="stylesheet" href="styles.css">
     <!-- SheetJS para manipulação de XLSX via CDN -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.0/package/dist/xlsx.full.min.js"></script>
+    <!-- Supabase para backend em nuvem -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Scripts de autenticação -->
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
 </head>
 <body>
     <div class="container">
         <header>
-            <h1>📦 Controle de Materiais</h1>
+            <div class="header-top">
+                <h1>📦 Controle de Materiais</h1>
+                <div class="user-info">
+                    <span id="userName">Usuário</span>
+                    <button id="logoutButton" class="logout-btn">Sair</button>
+                </div>
+            </div>
             <div class="alert-counter" id="alertCounter">
                 <span class="alert-icon">⚠️</span>
                 <span id="alertCount">0</span> materiais em estoque baixo
@@ -278,7 +289,7 @@
 
         <!-- Rodapé -->
         <footer class="system-footer">
-            <p><strong>SCM - Sistema de Controle de Materiais</strong> v1.2.0</p>
+            <p><strong>SCM - Sistema de Controle de Materiais</strong> v1.1.0</p>
             <p>Desenvolvido por <strong>Talishow Tech</strong> © 2025 - Todos os direitos reservados</p>
         </footer>
     </div>
@@ -378,7 +389,37 @@
     <input type="file" id="fileInput" style="display: none;" accept=".json,.csv,.xlsx">
 
     <script src="db.js"></script>
+    <script src="supabase-config.js"></script>
+    <script src="supabase-adapter.js"></script>
     <script src="app.js"></script>
+    
+    <!-- Script de autenticação -->
+    <script>
+        // Verificar autenticação ao carregar a página
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Verificar se está autenticado
+            if (!await auth.init()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            // Carregar informações do usuário
+            const userProfile = await auth.getUserProfile();
+            if (userProfile) {
+                document.getElementById('userName').textContent = userProfile.full_name || userProfile.email;
+            }
+
+            // Event listener para logout
+            document.getElementById('logoutButton').addEventListener('click', async () => {
+                if (confirm('Tem certeza que deseja sair?')) {
+                    await auth.logout();
+                    window.location.href = 'login.html';
+                }
+            });
+
+            console.log('🔐 Sistema protegido - usuário autenticado');
+        });
+    </script>
 </body>
 </html>
 

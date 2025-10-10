@@ -65,8 +65,145 @@ CREATE POLICY "Enable all access for now" ON products FOR ALL USING (true);
 CREATE POLICY "Enable all access for now" ON movements FOR ALL USING (true);
 CREATE POLICY "Enable all access for now" ON custom_types FOR ALL USING (true);
 
+-- Tabela de Usuários (dados adicionais além do Supabase Auth)
+CREATE TABLE users (
+    id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+    email TEXT UNIQUE NOT NULL,
+    full_name TEXT,
+    role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user')),
+    is_active BOOLEAN DEFAULT true,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW()),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- Tabela de Auditoria
+CREATE TABLE audit_log (
+    id TEXT PRIMARY KEY,
+    user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    action TEXT NOT NULL,
+    table_name TEXT NOT NULL,
+    record_id TEXT,
+    old_values JSONB,
+    new_values JSONB,
+    ip_address TEXT,
+    user_agent TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc', NOW())
+);
+
+-- Adicionar campos de auditoria nas tabelas existentes
+ALTER TABLE products ADD COLUMN created_by UUID REFERENCES auth.users(id);
+ALTER TABLE products ADD COLUMN updated_by UUID REFERENCES auth.users(id);
+ALTER TABLE movements ADD COLUMN created_by UUID REFERENCES auth.users(id);
+ALTER TABLE custom_types ADD COLUMN created_by UUID REFERENCES auth.users(id);
+
+-- Índices para auditoria
+CREATE INDEX idx_audit_log_user_id ON audit_log(user_id);
+CREATE INDEX idx_audit_log_action ON audit_log(action);
+CREATE INDEX idx_audit_log_table_name ON audit_log(table_name);
+CREATE INDEX idx_audit_log_created_at ON audit_log(created_at);
+
+-- Índices para campos de auditoria
+CREATE INDEX idx_products_created_by ON products(created_by);
+CREATE INDEX idx_products_updated_by ON products(updated_by);
+CREATE INDEX idx_movements_created_by ON movements(created_by);
+
+-- Função para capturar user_id automaticamente
+CREATE OR REPLACE FUNCTION auth.user_id()
+RETURNS UUID
+LANGUAGE SQL STABLE
+AS $$
+  SELECT auth.uid()
+$$;
+
+-- Função para auditoria automática
+CREATE OR REPLACE FUNCTION create_audit_log()
+RETURNS TRIGGER AS $$
+BEGIN
+    INSERT INTO audit_log (
+        id,
+        user_id,
+        action,
+        table_name,
+        record_id,
+        old_values,
+        new_values,
+        ip_address,
+        user_agent
+    ) VALUES (
+        gen_random_uuid()::text,
+        auth.user_id(),
+        TG_OP,
+        TG_TABLE_NAME,
+        COALESCE(NEW.id, OLD.id),
+        CASE WHEN TG_OP = 'DELETE' THEN to_jsonb(OLD) ELSE NULL END,
+        CASE WHEN TG_OP != 'DELETE' THEN to_jsonb(NEW) ELSE NULL END,
+        current_setting('request.headers', true)::json->>'x-forwarded-for',
+        current_setting('request.headers', true)::json->>'user-agent'
+    );
+    
+    RETURN COALESCE(NEW, OLD);
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Triggers para auditoria automática
+CREATE TRIGGER products_audit_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON products
+    FOR EACH ROW EXECUTE FUNCTION create_audit_log();
+
+CREATE TRIGGER movements_audit_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON movements
+    FOR EACH ROW EXECUTE FUNCTION create_audit_log();
+
+CREATE TRIGGER custom_types_audit_trigger
+    AFTER INSERT OR UPDATE OR DELETE ON custom_types
+    FOR EACH ROW EXECUTE FUNCTION create_audit_log();
+
+-- Habilitar RLS nas novas tabelas
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_log ENABLE ROW LEVEL SECURITY;
+
+-- Políticas RLS para users
+CREATE POLICY "Users can view their own profile" ON users
+    FOR SELECT USING (auth.user_id() = id);
+
+CREATE POLICY "Users can update their own profile" ON users
+    FOR UPDATE USING (auth.user_id() = id);
+
+CREATE POLICY "Admin can view all users" ON users
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE id = auth.user_id() AND role = 'admin'
+        )
+    );
+
+-- Políticas RLS para audit_log (apenas admin)
+CREATE POLICY "Admin can view audit log" ON audit_log
+    FOR SELECT USING (
+        EXISTS (
+            SELECT 1 FROM users 
+            WHERE id = auth.user_id() AND role = 'admin'
+        )
+    );
+
+-- Atualizar políticas existentes para requerer autenticação
+DROP POLICY "Enable all access for now" ON products;
+DROP POLICY "Enable all access for now" ON movements;
+DROP POLICY "Enable all access for now" ON custom_types;
+
+CREATE POLICY "Authenticated users can manage products" ON products
+    FOR ALL USING (auth.user_id() IS NOT NULL);
+
+CREATE POLICY "Authenticated users can manage movements" ON movements
+    FOR ALL USING (auth.user_id() IS NOT NULL);
+
+CREATE POLICY "Authenticated users can manage custom_types" ON custom_types
+    FOR ALL USING (auth.user_id() IS NOT NULL);
+
 -- Comentários nas tabelas
 COMMENT ON TABLE products IS 'Tabela de materiais/produtos do estoque';
 COMMENT ON TABLE movements IS 'Histórico de movimentações (entradas e saídas)';
 COMMENT ON TABLE custom_types IS 'Tipos/categorias personalizadas criadas pelo usuário';
+COMMENT ON TABLE users IS 'Dados adicionais dos usuários autenticados';
+COMMENT ON TABLE audit_log IS 'Log de auditoria de todas as ações do sistema';
 

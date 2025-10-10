@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste Sistema de Autenticação - SCM</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            padding: 30px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        .test-section {
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+        }
+
+        .test-section h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        .test-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            margin: 5px;
+            transition: transform 0.3s ease;
+        }
+
+        .test-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .test-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+
+        .test-results {
+            margin-top: 15px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            color: #667eea;
+            margin: 10px 0;
+        }
+
+        .user-info {
+            background: #e8f4fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
+        .user-info h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .user-info p {
+            margin: 5px 0;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Teste do Sistema de Autenticação</h1>
+
+        <!-- Status da Conexão -->
+        <div class="test-section">
+            <h2>📡 Status da Conexão</h2>
+            <div id="connectionStatus" class="status info">Verificando conexão...</div>
+            <button class="test-button" onclick="checkConnection()">Verificar Conexão</button>
+        </div>
+
+        <!-- Teste de Login -->
+        <div class="test-section">
+            <h2>🔑 Teste de Login</h2>
+            <div class="form-group">
+                <label for="testEmail">Email:</label>
+                <input type="email" id="testEmail" placeholder="seu-email@exemplo.com">
+            </div>
+            <div class="form-group">
+                <label for="testPassword">Senha:</label>
+                <input type="password" id="testPassword" placeholder="Sua senha">
+            </div>
+            <button class="test-button" onclick="testLogin()">Testar Login</button>
+            <div class="loading" id="loginLoading">🔄 Testando login...</div>
+            <div id="loginResults" class="test-results" style="display: none;"></div>
+        </div>
+
+        <!-- Informações do Usuário -->
+        <div class="test-section">
+            <h2>👤 Informações do Usuário</h2>
+            <div id="userInfo" class="user-info" style="display: none;">
+                <h3>Usuário Logado</h3>
+                <p id="userDetails"></p>
+            </div>
+            <button class="test-button" onclick="getUserInfo()">Obter Informações do Usuário</button>
+            <button class="test-button" onclick="testLogout()">Testar Logout</button>
+        </div>
+
+        <!-- Teste de Permissões -->
+        <div class="test-section">
+            <h2>🛡️ Teste de Permissões</h2>
+            <button class="test-button" onclick="testAdminCheck()">Verificar se é Admin</button>
+            <button class="test-button" onclick="testAuthRequired()">Testar Requisição de Auth</button>
+            <div id="permissionsResults" class="test-results" style="display: none;"></div>
+        </div>
+
+        <!-- Teste de Operações CRUD -->
+        <div class="test-section">
+            <h2>📝 Teste de Operações CRUD</h2>
+            <button class="test-button" onclick="testProductCRUD()">Testar CRUD de Produtos</button>
+            <button class="test-button" onclick="testMovementCRUD()">Testar CRUD de Movimentações</button>
+            <div class="loading" id="crudLoading">🔄 Testando operações...</div>
+            <div id="crudResults" class="test-results" style="display: none;"></div>
+        </div>
+
+        <!-- Teste de Auditoria -->
+        <div class="test-section">
+            <h2>📋 Teste de Auditoria</h2>
+            <button class="test-button" onclick="testAuditLog()">Verificar Log de Auditoria</button>
+            <div class="loading" id="auditLoading">🔄 Verificando auditoria...</div>
+            <div id="auditResults" class="test-results" style="display: none;"></div>
+        </div>
+
+        <!-- Navegação -->
+        <div class="test-section">
+            <h2>🔗 Navegação</h2>
+            <button class="test-button" onclick="window.open('login.html', '_blank')">Abrir Tela de Login</button>
+            <button class="test-button" onclick="window.open('SCM_Supabase.html', '_blank')">Abrir Sistema Principal</button>
+            <button class="test-button" onclick="window.open('usuarios.html', '_blank')">Abrir Gerenciamento de Usuários</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    
+    <script>
+        let isAuthenticated = false;
+
+        // Verificar status inicial
+        document.addEventListener('DOMContentLoaded', async () => {
+            await checkConnection();
+            await getUserInfo();
+        });
+
+        // Verificar conexão
+        async function checkConnection() {
+            try {
+                const statusDiv = document.getElementById('connectionStatus');
+                
+                if (typeof supabaseClient === 'undefined') {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = '❌ Supabase não configurado';
+                    return;
+                }
+
+                // Testar conexão básica
+                const { data, error } = await supabaseClient.from('products').select('count').limit(1);
+                
+                if (error) {
+                    statusDiv.className = 'status error';
+                    statusDiv.textContent = '❌ Erro de conexão: ' + error.message;
+                } else {
+                    statusDiv.className = 'status success';
+                    statusDiv.textContent = '✅ Conexão com Supabase OK';
+                }
+            } catch (error) {
+                document.getElementById('connectionStatus').className = 'status error';
+                document.getElementById('connectionStatus').textContent = '❌ Erro: ' + error.message;
+            }
+        }
+
+        // Testar login
+        async function testLogin() {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            const resultsDiv = document.getElementById('loginResults');
+            const loadingDiv = document.getElementById('loginLoading');
+
+            if (!email || !password) {
+                showResults('loginResults', '❌ Email e senha são obrigatórios', 'error');
+                return;
+            }
+
+            loadingDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+
+            try {
+                const result = await auth.login(email, password);
+                
+                if (result.success) {
+                    isAuthenticated = true;
+                    showResults('loginResults', '✅ Login realizado com sucesso!', 'success');
+                    await getUserInfo();
+                } else {
+                    showResults('loginResults', '❌ Erro no login: ' + result.error, 'error');
+                }
+            } catch (error) {
+                showResults('loginResults', '❌ Erro inesperado: ' + error.message, 'error');
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Obter informações do usuário
+        async function getUserInfo() {
+            try {
+                const userInfoDiv = document.getElementById('userInfo');
+                const userDetailsDiv = document.getElementById('userDetails');
+
+                if (await auth.init()) {
+                    const currentUser = auth.getCurrentUser();
+                    const userProfile = await auth.getUserProfile();
+                    
+                    if (currentUser && userProfile) {
+                        userInfoDiv.style.display = 'block';
+                        userDetailsDiv.innerHTML = `
+                            <strong>Email:</strong> ${currentUser.email}<br>
+                            <strong>Nome:</strong> ${userProfile.full_name || 'Não informado'}<br>
+                            <strong>Função:</strong> ${userProfile.role}<br>
+                            <strong>Ativo:</strong> ${userProfile.is_active ? 'Sim' : 'Não'}<br>
+                            <strong>ID:</strong> ${currentUser.id}
+                        `;
+                        isAuthenticated = true;
+                    } else {
+                        userInfoDiv.style.display = 'none';
+                        isAuthenticated = false;
+                    }
+                } else {
+                    userInfoDiv.style.display = 'none';
+                    isAuthenticated = false;
+                }
+            } catch (error) {
+                console.error('Erro ao obter informações do usuário:', error);
+            }
+        }
+
+        // Testar logout
+        async function testLogout() {
+            try {
+                const success = await auth.logout();
+                if (success) {
+                    showResults('loginResults', '✅ Logout realizado com sucesso!', 'success');
+                    document.getElementById('userInfo').style.display = 'none';
+                    isAuthenticated = false;
+                } else {
+                    showResults('loginResults', '❌ Erro no logout', 'error');
+                }
+            } catch (error) {
+                showResults('loginResults', '❌ Erro inesperado no logout: ' + error.message, 'error');
+            }
+        }
+
+        // Testar verificação de admin
+        async function testAdminCheck() {
+            try {
+                const isAdmin = await auth.isAdmin();
+                const message = isAdmin ? '✅ Usuário é administrador' : 'ℹ️ Usuário não é administrador';
+                showResults('permissionsResults', message, isAdmin ? 'success' : 'info');
+            } catch (error) {
+                showResults('permissionsResults', '❌ Erro ao verificar admin: ' + error.message, 'error');
+            }
+        }
+
+        // Testar requisição de auth
+        function testAuthRequired() {
+            const required = auth.requireAuth();
+            const message = required ? '✅ Autenticação OK' : '❌ Autenticação necessária';
+            showResults('permissionsResults', message, required ? 'success' : 'warning');
+        }
+
+        // Testar CRUD de produtos
+        async function testProductCRUD() {
+            const resultsDiv = document.getElementById('crudResults');
+            const loadingDiv = document.getElementById('crudLoading');
+
+            if (!isAuthenticated) {
+                showResults('crudResults', '❌ Faça login primeiro', 'error');
+                return;
+            }
+
+            loadingDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+
+            try {
+                const testProduct = {
+                    id: 'test-product-' + Date.now(),
+                    name: 'Produto Teste',
+                    description: 'Produto criado pelo teste',
+                    type: 'teste',
+                    quantity: 10,
+                    minQuantity: 5,
+                    unit: 'unid'
+                };
+
+                // Criar produto
+                const { data: insertData, error: insertError } = await supabaseClient
+                    .from('products')
+                    .insert({
+                        id: testProduct.id,
+                        name: testProduct.name,
+                        description: testProduct.description,
+                        type: testProduct.type,
+                        quantity: testProduct.quantity,
+                        min_quantity: testProduct.minQuantity,
+                        unit: testProduct.unit,
+                        created_by: (await auth.getCurrentUser()).id,
+                        updated_by: (await auth.getCurrentUser()).id
+                    });
+
+                if (insertError) throw insertError;
+
+                // Atualizar produto
+                const { error: updateError } = await supabaseClient
+                    .from('products')
+                    .update({ quantity: 15 })
+                    .eq('id', testProduct.id);
+
+                if (updateError) throw updateError;
+
+                // Deletar produto
+                const { error: deleteError } = await supabaseClient
+                    .from('products')
+                    .delete()
+                    .eq('id', testProduct.id);
+
+                if (deleteError) throw deleteError;
+
+                showResults('crudResults', '✅ CRUD de produtos funcionando perfeitamente!', 'success');
+            } catch (error) {
+                showResults('crudResults', '❌ Erro no CRUD de produtos: ' + error.message, 'error');
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Testar CRUD de movimentações
+        async function testMovementCRUD() {
+            const resultsDiv = document.getElementById('crudResults');
+            
+            if (!isAuthenticated) {
+                showResults('crudResults', '❌ Faça login primeiro', 'error');
+                return;
+            }
+
+            try {
+                // Primeiro, criar um produto para testar movimentação
+                const testProduct = {
+                    id: 'test-movement-product-' + Date.now(),
+                    name: 'Produto para Movimentação',
+                    type: 'teste',
+                    quantity: 10,
+                    min_quantity: 5,
+                    unit: 'unid'
+                };
+
+                await supabaseClient.from('products').insert({
+                    id: testProduct.id,
+                    name: testProduct.name,
+                    type: testProduct.type,
+                    quantity: testProduct.quantity,
+                    min_quantity: testProduct.min_quantity,
+                    unit: testProduct.unit,
+                    created_by: (await auth.getCurrentUser()).id
+                });
+
+                // Criar movimentação
+                const movementId = 'test-movement-' + Date.now();
+                const { error: insertError } = await supabaseClient
+                    .from('movements')
+                    .insert({
+                        id: movementId,
+                        product_id: testProduct.id,
+                        type: 'entrada',
+                        quantity: 5,
+                        timestamp: new Date().toISOString(),
+                        created_by: (await auth.getCurrentUser()).id
+                    });
+
+                if (insertError) throw insertError;
+
+                // Deletar movimentação
+                const { error: deleteError } = await supabaseClient
+                    .from('movements')
+                    .delete()
+                    .eq('id', movementId);
+
+                if (deleteError) throw deleteError;
+
+                // Deletar produto de teste
+                await supabaseClient.from('products').delete().eq('id', testProduct.id);
+
+                showResults('crudResults', '✅ CRUD de movimentações funcionando perfeitamente!', 'success');
+            } catch (error) {
+                showResults('crudResults', '❌ Erro no CRUD de movimentações: ' + error.message, 'error');
+            }
+        }
+
+        // Testar log de auditoria
+        async function testAuditLog() {
+            const resultsDiv = document.getElementById('auditResults');
+            const loadingDiv = document.getElementById('auditLoading');
+
+            if (!isAuthenticated) {
+                showResults('auditResults', '❌ Faça login primeiro', 'error');
+                return;
+            }
+
+            loadingDiv.style.display = 'block';
+            resultsDiv.style.display = 'none';
+
+            try {
+                const { data, error } = await supabaseClient
+                    .from('audit_log')
+                    .select(`
+                        *,
+                        users:user_id(email, full_name)
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(10);
+
+                if (error) throw error;
+
+                if (data && data.length > 0) {
+                    const auditInfo = data.map(log => {
+                        const userName = log.users ? (log.users.full_name || log.users.email) : 'Usuário removido';
+                        return `• ${log.action} em ${log.table_name} por ${userName} (${new Date(log.created_at).toLocaleString('pt-BR')})`;
+                    }).join('<br>');
+
+                    showResults('auditResults', `✅ Log de auditoria funcionando!<br><br><strong>Últimas 10 ações:</strong><br>${auditInfo}`, 'success');
+                } else {
+                    showResults('auditResults', 'ℹ️ Log de auditoria vazio (nenhuma ação registrada ainda)', 'info');
+                }
+            } catch (error) {
+                showResults('auditResults', '❌ Erro ao verificar log de auditoria: ' + error.message, 'error');
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        }
+
+        // Função auxiliar para mostrar resultados
+        function showResults(containerId, message, type) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = message;
+            container.className = `test-results status-${type}`;
+            container.style.display = 'block';
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Exclusão - SCM + Supabase</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .test-result { padding: 10px; margin: 5px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #0056b3; }
+        .product-item { background: #f8f9fa; padding: 10px; margin: 5px 0; border-radius: 4px; display: flex; justify-content: space-between; align-items: center; }
+        .delete-btn { background: #dc3545; }
+        .delete-btn:hover { background: #c82333; }
+        #log { background: #f8f9fa; border: 1px solid #dee2e6; padding: 15px; border-radius: 5px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🗑️ Teste de Exclusão - SCM + Supabase</h1>
+        
+        <div class="test-section">
+            <h3>📦 Produtos no Supabase</h3>
+            <button onclick="loadProducts()">Carregar Produtos</button>
+            <button onclick="createTestProduct()">Criar Produto de Teste</button>
+            <div id="productsList"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🧪 Teste de Exclusão</h3>
+            <button onclick="testDeleteFlow()">Testar Fluxo Completo</button>
+            <div id="testResults"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📝 Log de Testes</h3>
+            <button onclick="clearLog()">Limpar Log</button>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    
+    <script>
+        let logDiv = document.getElementById('log');
+        let supabaseClient = null;
+        let testProductId = null;
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}\n`;
+            logDiv.textContent += logMessage;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        function clearLog() {
+            logDiv.textContent = '';
+        }
+        
+        function showResult(containerId, message, type) {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.innerHTML = message;
+            container.appendChild(result);
+        }
+        
+        // Inicializar
+        function init() {
+            log('🚀 Iniciando teste de exclusão...');
+            
+            if (typeof supabase === 'undefined' || !isSupabaseConfigured()) {
+                log('❌ Supabase não configurado');
+                return;
+            }
+            
+            if (initSupabase()) {
+                supabaseClient = window.supabaseClient;
+                log('🟢 Supabase inicializado');
+            } else {
+                log('❌ Erro ao inicializar Supabase');
+            }
+        }
+        
+        // Carregar produtos
+        async function loadProducts() {
+            log('📦 Carregando produtos...');
+            document.getElementById('productsList').innerHTML = '';
+            
+            if (!supabaseClient) {
+                showResult('productsList', '❌ Supabase não inicializado', 'error');
+                return;
+            }
+            
+            try {
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .select('id, name, quantity, created_at')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                if (data.length === 0) {
+                    showResult('productsList', '📝 Nenhum produto encontrado', 'info');
+                } else {
+                    data.forEach(product => {
+                        const productDiv = document.createElement('div');
+                        productDiv.className = 'product-item';
+                        productDiv.innerHTML = `
+                            <div>
+                                <strong>${product.name}</strong><br>
+                                <small>ID: ${product.id} | Qtd: ${product.quantity}</small>
+                            </div>
+                            <button class="delete-btn" onclick="deleteProduct('${product.id}')">🗑️ Excluir</button>
+                        `;
+                        document.getElementById('productsList').appendChild(productDiv);
+                    });
+                }
+                
+                log(`🟢 ${data.length} produtos carregados`);
+                
+            } catch (error) {
+                showResult('productsList', `❌ Erro: ${error.message}`, 'error');
+                log(`❌ Erro ao carregar produtos: ${error.message}`);
+            }
+        }
+        
+        // Criar produto de teste
+        async function createTestProduct() {
+            log('➕ Criando produto de teste...');
+            
+            if (!supabaseClient) {
+                showResult('testResults', '❌ Supabase não inicializado', 'error');
+                return;
+            }
+            
+            try {
+                const product = {
+                    id: `test_delete_${Date.now()}`,
+                    name: `Produto Teste Exclusão ${Date.now()}`,
+                    description: 'Produto para teste de exclusão',
+                    type: 'Teste',
+                    quantity: 50,
+                    min_quantity: 5,
+                    unit: 'unid'
+                };
+                
+                const { data, error } = await supabaseClient
+                    .from('products')
+                    .insert(product);
+                
+                if (error) throw error;
+                
+                testProductId = product.id;
+                showResult('testResults', `✅ Produto de teste criado: ${product.name}`, 'success');
+                log(`🟢 Produto de teste criado: ${product.id}`);
+                
+                // Recarregar lista
+                loadProducts();
+                
+            } catch (error) {
+                showResult('testResults', `❌ Erro: ${error.message}`, 'error');
+                log(`❌ Erro ao criar produto: ${error.message}`);
+            }
+        }
+        
+        // Excluir produto
+        async function deleteProduct(productId) {
+            log(`🗑️ Excluindo produto: ${productId}`);
+            
+            if (!supabaseClient) {
+                showResult('testResults', '❌ Supabase não inicializado', 'error');
+                return;
+            }
+            
+            try {
+                // Excluir movimentações primeiro
+                const { error: movementsError } = await supabaseClient
+                    .from('movements')
+                    .delete()
+                    .eq('product_id', productId);
+                
+                if (movementsError) throw movementsError;
+                
+                // Excluir produto
+                const { error: productError } = await supabaseClient
+                    .from('products')
+                    .delete()
+                    .eq('id', productId);
+                
+                if (productError) throw productError;
+                
+                showResult('testResults', `✅ Produto excluído com sucesso: ${productId}`, 'success');
+                log(`🟢 Produto excluído: ${productId}`);
+                
+                // Recarregar lista
+                loadProducts();
+                
+            } catch (error) {
+                showResult('testResults', `❌ Erro ao excluir: ${error.message}`, 'error');
+                log(`❌ Erro ao excluir produto: ${error.message}`);
+            }
+        }
+        
+        // Teste completo de exclusão
+        async function testDeleteFlow() {
+            log('🧪 Iniciando teste completo de exclusão...');
+            document.getElementById('testResults').innerHTML = '';
+            
+            if (!supabaseClient) {
+                showResult('testResults', '❌ Supabase não inicializado', 'error');
+                return;
+            }
+            
+            try {
+                // 1. Criar produto
+                const productId = `flow_test_${Date.now()}`;
+                const product = {
+                    id: productId,
+                    name: `Teste Fluxo ${Date.now()}`,
+                    description: 'Produto para teste de fluxo',
+                    type: 'Teste',
+                    quantity: 100,
+                    min_quantity: 10,
+                    unit: 'unid'
+                };
+                
+                const { error: createError } = await supabaseClient
+                    .from('products')
+                    .insert(product);
+                
+                if (createError) throw createError;
+                
+                log('✅ Passo 1: Produto criado');
+                showResult('testResults', '✅ Passo 1: Produto criado', 'success');
+                
+                // 2. Verificar se foi criado
+                const { data: verifyData, error: verifyError } = await supabaseClient
+                    .from('products')
+                    .select('id')
+                    .eq('id', productId);
+                
+                if (verifyError) throw verifyError;
+                
+                if (verifyData.length === 0) {
+                    throw new Error('Produto não foi criado');
+                }
+                
+                log('✅ Passo 2: Produto verificado');
+                showResult('testResults', '✅ Passo 2: Produto verificado', 'success');
+                
+                // 3. Excluir produto
+                const { error: deleteError } = await supabaseClient
+                    .from('products')
+                    .delete()
+                    .eq('id', productId);
+                
+                if (deleteError) throw deleteError;
+                
+                log('✅ Passo 3: Produto excluído');
+                showResult('testResults', '✅ Passo 3: Produto excluído', 'success');
+                
+                // 4. Verificar se foi excluído
+                const { data: finalData, error: finalError } = await supabaseClient
+                    .from('products')
+                    .select('id')
+                    .eq('id', productId);
+                
+                if (finalError) throw finalError;
+                
+                if (finalData.length > 0) {
+                    throw new Error('Produto não foi excluído corretamente');
+                }
+                
+                log('✅ Passo 4: Exclusão verificada');
+                showResult('testResults', '✅ Passo 4: Exclusão verificada - TESTE COMPLETO!', 'success');
+                
+            } catch (error) {
+                showResult('testResults', `❌ Teste falhou: ${error.message}`, 'error');
+                log(`❌ Teste falhou: ${error.message}`);
+            }
+        }
+        
+        // Inicializar quando carregar
+        window.addEventListener('load', () => {
+            setTimeout(init, 500);
+        });
+    </script>
+</body>
+</html>

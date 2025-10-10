@@ -1,3 +1,128 @@
+// ===== INTEGRAÇÃO SUPABASE =====
+let isSupabaseOnline = false;
+let supabaseInitialized = false;
+let currentUserId = null;
+
+// Inicializar Supabase quando a página carregar
+document.addEventListener('DOMContentLoaded', async () => {
+    if (typeof supabase !== 'undefined' && isSupabaseConfigured()) {
+        try {
+            supabaseInitialized = initSupabase();
+            if (supabaseInitialized && isOnline()) {
+                isSupabaseOnline = true;
+                
+                // Obter usuário atual
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                if (session) {
+                    currentUserId = session.user.id;
+                }
+                
+                console.log('🟢 SCM rodando em modo ONLINE (Supabase)');
+                showConnectionStatus('online');
+            } else {
+                console.log('🔴 SCM rodando em modo OFFLINE (IndexedDB)');
+                showConnectionStatus('offline');
+            }
+        } catch (error) {
+            console.error('❌ Erro ao inicializar Supabase:', error);
+            showConnectionStatus('offline');
+        }
+    } else {
+        console.log('⚪ SCM rodando em modo LOCAL (IndexedDB)');
+        showConnectionStatus('local');
+    }
+});
+
+// Mostrar status da conexão
+function showConnectionStatus(status) {
+    const header = document.querySelector('h1');
+    if (!header) return;
+    
+    let statusIndicator = header.querySelector('.connection-status');
+    if (!statusIndicator) {
+        statusIndicator = document.createElement('span');
+        statusIndicator.className = 'connection-status';
+        header.appendChild(statusIndicator);
+    }
+    
+    switch(status) {
+        case 'online':
+            statusIndicator.innerHTML = '<span style="color: #28a745; font-size: 1.2em;" title="Conectado ao Supabase">🟢</span>';
+            break;
+        case 'offline':
+            statusIndicator.innerHTML = '<span style="color: #dc3545; font-size: 1.2em;" title="Sem conexão - modo offline">🔴</span>';
+            break;
+        case 'local':
+            statusIndicator.innerHTML = '<span style="color: #6c757d; font-size: 1.2em;" title="Modo local - IndexedDB apenas">⚪</span>';
+            break;
+    }
+}
+
+// Verificar status online/offline
+window.addEventListener('online', () => {
+    if (supabaseInitialized) {
+        isSupabaseOnline = true;
+        showConnectionStatus('online');
+        console.log('🟢 Conexão restaurada - modo ONLINE');
+    }
+});
+
+window.addEventListener('offline', () => {
+    isSupabaseOnline = false;
+    showConnectionStatus('offline');
+    console.log('🔴 Conexão perdida - modo OFFLINE');
+});
+
+// Sincronizar dados do Supabase com IndexedDB local
+async function syncToLocalDB() {
+    try {
+        // Limpar dados locais
+        await clearAllData();
+        
+        // Salvar produtos no IndexedDB
+        for (const product of products) {
+            await addProduct(product);
+        }
+        
+        // Salvar movimentações no IndexedDB
+        for (const movement of movements) {
+            await addMovement(movement);
+        }
+        
+        console.log('🔄 Dados sincronizados com IndexedDB local');
+    } catch (error) {
+        console.error('❌ Erro ao sincronizar com IndexedDB:', error);
+    }
+}
+
+// Função para registrar auditoria manual (quando necessário)
+async function logAuditAction(action, tableName, recordId, oldValues = null, newValues = null) {
+    if (!isSupabaseOnline || !currentUserId) return;
+
+    try {
+        const auditData = {
+            id: generateId(),
+            user_id: currentUserId,
+            action: action,
+            table_name: tableName,
+            record_id: recordId,
+            old_values: oldValues ? JSON.stringify(oldValues) : null,
+            new_values: newValues ? JSON.stringify(newValues) : null,
+            created_at: new Date().toISOString()
+        };
+
+        const { error } = await supabaseClient
+            .from('audit_log')
+            .insert(auditData);
+
+        if (error) {
+            console.error('❌ Erro ao registrar auditoria:', error);
+        }
+    } catch (error) {
+        console.error('❌ Erro inesperado na auditoria:', error);
+    }
+}
+
 // ===== VALIDAÇÕES SIMPLES =====
 function validateProduct(product, isEditing = false) {
     // Validar nome
@@ -194,9 +319,58 @@ async function loadDataFromDB() {
     
     // Cache inválido - carregar do banco
     try {
-        console.log('📂 Carregando do IndexedDB...');
-        products = await getAllProducts();
-        movements = await getAllMovements();
+        // Tentar carregar do Supabase primeiro se online
+        if (isSupabaseOnline && supabaseInitialized) {
+            console.log('🌐 Carregando do Supabase...');
+            try {
+                const { data: supabaseProducts, error: productsError } = await supabaseClient
+                    .from('products')
+                    .select('*')
+                    .order('name');
+                
+                const { data: supabaseMovements, error: movementsError } = await supabaseClient
+                    .from('movements')
+                    .select('*')
+                    .order('timestamp', { ascending: false });
+                
+                if (productsError) throw productsError;
+                if (movementsError) throw movementsError;
+                
+                // Converter dados do Supabase para formato local
+                products = (supabaseProducts || []).map(p => ({
+                    id: p.id,
+                    name: p.name,
+                    description: p.description || '',
+                    type: p.type,
+                    quantity: p.quantity,
+                    minQuantity: p.min_quantity,
+                    unit: p.unit
+                }));
+                
+                movements = (supabaseMovements || []).map(m => ({
+                    id: m.id,
+                    productId: m.product_id,
+                    type: m.type,
+                    quantity: m.quantity,
+                    timestamp: m.timestamp
+                }));
+                
+                console.log(`✅ Carregados ${products.length} produtos e ${movements.length} movimentações do Supabase`);
+                
+                // Sincronizar com IndexedDB local
+                await syncToLocalDB();
+                
+            } catch (supabaseError) {
+                console.error('❌ Erro ao carregar do Supabase:', supabaseError);
+                console.log('📂 Fallback: carregando do IndexedDB...');
+                products = await getAllProducts();
+                movements = await getAllMovements();
+            }
+        } else {
+            console.log('📂 Carregando do IndexedDB...');
+            products = await getAllProducts();
+            movements = await getAllMovements();
+        }
         
         // Atualizar cache
         productsCache = [...products];
@@ -443,12 +617,64 @@ async function handleProductSubmit(e) {
             const index = products.findIndex(p => p.id === editingProductId);
             if (index !== -1) {
                 products[index] = product;
+                
+                // Salvar no Supabase se online
+                if (isSupabaseOnline && supabaseInitialized) {
+                    try {
+                        const { error } = await supabaseClient
+                            .from('products')
+                            .update({
+                                name: product.name,
+                                description: product.description,
+                                type: product.type,
+                                quantity: product.quantity,
+                                min_quantity: product.minQuantity,
+                                unit: product.unit,
+                                updated_by: currentUserId,
+                                updated_at: new Date().toISOString()
+                            })
+                            .eq('id', product.id);
+                        
+                        if (error) throw error;
+                        console.log('✅ Produto atualizado no Supabase');
+                    } catch (error) {
+                        console.error('❌ Erro ao atualizar no Supabase:', error);
+                    }
+                }
+                
                 await updateProduct(product);
             }
             editingProductId = null;
         } else {
             // Adicionar novo produto
             products.push(product);
+            
+            // Salvar no Supabase se online
+            if (isSupabaseOnline && supabaseInitialized) {
+                try {
+                    const { error } = await supabaseClient
+                        .from('products')
+                        .insert({
+                            id: product.id,
+                            name: product.name,
+                            description: product.description,
+                            type: product.type,
+                            quantity: product.quantity,
+                            min_quantity: product.minQuantity,
+                            unit: product.unit,
+                            created_by: currentUserId,
+                            updated_by: currentUserId,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        });
+                    
+                    if (error) throw error;
+                    console.log('✅ Produto salvo no Supabase');
+                } catch (error) {
+                    console.error('❌ Erro ao salvar no Supabase:', error);
+                }
+            }
+            
             await addProduct(product);
         }
         
@@ -521,6 +747,32 @@ async function deleteProductFromSystem(id) {
     if (!confirm('Tem certeza que deseja excluir este material?')) return;
     
     try {
+        // Excluir do Supabase se online
+        if (isSupabaseOnline && supabaseInitialized) {
+            try {
+                // Excluir movimentações primeiro (devido à foreign key)
+                const { error: movementsError } = await supabaseClient
+                    .from('movements')
+                    .delete()
+                    .eq('product_id', id);
+                
+                if (movementsError) throw movementsError;
+                
+                // Excluir produto
+                const { error: productError } = await supabaseClient
+                    .from('products')
+                    .delete()
+                    .eq('id', id);
+                
+                if (productError) throw productError;
+                
+                console.log('✅ Produto excluído do Supabase');
+            } catch (error) {
+                console.error('❌ Erro ao excluir do Supabase:', error);
+            }
+        }
+        
+        // Excluir localmente
         products = products.filter(p => p.id !== id);
         movements = movements.filter(m => m.productId !== id);
         
@@ -1153,6 +1405,38 @@ async function handleMovementSubmit(e) {
         
         movements.push(movement);
         
+        // Salvar movimentação no Supabase se online
+        if (isSupabaseOnline && supabaseInitialized) {
+            try {
+                const { error: movementError } = await supabaseClient
+                    .from('movements')
+                    .insert({
+                        id: movement.id,
+                        product_id: movement.productId,
+                        type: movement.type,
+                        quantity: movement.quantity,
+                        timestamp: movement.timestamp
+                    });
+                
+                if (movementError) throw movementError;
+                
+                // Atualizar produto no Supabase também
+                const { error: productError } = await supabaseClient
+                    .from('products')
+                    .update({
+                        quantity: product.quantity,
+                        updated_at: new Date().toISOString()
+                    })
+                    .eq('id', productId);
+                
+                if (productError) throw productError;
+                
+                console.log('✅ Movimentação salva no Supabase');
+            } catch (error) {
+                console.error('❌ Erro ao salvar movimentação no Supabase:', error);
+            }
+        }
+        
         await updateProduct(product);
         await addMovement(movement);
         
@@ -1325,6 +1609,58 @@ function importJSON(file) {
             }
             
             if (confirm('Importar dados? Isso irá substituir todos os dados atuais!')) {
+                // Salvar no Supabase se online
+                if (isSupabaseOnline && supabaseInitialized) {
+                    try {
+                        // Limpar dados existentes no Supabase
+                        await supabaseClient.from('movements').delete().neq('id', '');
+                        await supabaseClient.from('products').delete().neq('id', '');
+                        
+                        // Inserir novos produtos
+                        if (data.products && data.products.length > 0) {
+                            const supabaseProducts = data.products.map(p => ({
+                                id: p.id,
+                                name: p.name,
+                                description: p.description || '',
+                                type: p.type,
+                                quantity: p.quantity,
+                                min_quantity: p.minQuantity,
+                                unit: p.unit,
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString()
+                            }));
+                            
+                            const { error: productsError } = await supabaseClient
+                                .from('products')
+                                .insert(supabaseProducts);
+                            
+                            if (productsError) throw productsError;
+                        }
+                        
+                        // Inserir movimentações
+                        if (data.movements && data.movements.length > 0) {
+                            const supabaseMovements = data.movements.map(m => ({
+                                id: m.id,
+                                product_id: m.productId,
+                                type: m.type,
+                                quantity: m.quantity,
+                                timestamp: m.timestamp
+                            }));
+                            
+                            const { error: movementsError } = await supabaseClient
+                                .from('movements')
+                                .insert(supabaseMovements);
+                            
+                            if (movementsError) throw movementsError;
+                        }
+                        
+                        console.log('✅ Dados JSON importados para o Supabase');
+                    } catch (error) {
+                        console.error('❌ Erro ao importar JSON para o Supabase:', error);
+                    }
+                }
+                
+                // Salvar localmente
                 products = data.products;
                 movements = data.movements || [];
                 
@@ -1395,8 +1731,35 @@ function importCSV(file) {
             }
             
             if (confirm(`Importar ${newProducts.length} materiais? Isso irá adicionar aos materiais existentes!`)) {
-                products = [...products, ...newProducts];
+                // Salvar no Supabase se online
+                if (isSupabaseOnline && supabaseInitialized) {
+                    try {
+                        const supabaseProducts = newProducts.map(p => ({
+                            id: p.id,
+                            name: p.name,
+                            description: p.description || '',
+                            type: p.type,
+                            quantity: p.quantity,
+                            min_quantity: p.minQuantity,
+                            unit: p.unit,
+                            created_at: new Date().toISOString(),
+                            updated_at: new Date().toISOString()
+                        }));
+                        
+                        const { error } = await supabaseClient
+                            .from('products')
+                            .insert(supabaseProducts);
+                        
+                        if (error) throw error;
+                        
+                        console.log(`✅ ${newProducts.length} produtos importados para o Supabase`);
+                    } catch (error) {
+                        console.error('❌ Erro ao importar para o Supabase:', error);
+                    }
+                }
                 
+                // Salvar localmente
+                products = [...products, ...newProducts];
                 await saveToDatabase();
                 
                 // Atualizar cache com novos dados

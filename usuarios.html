@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciamento de Usuários - SCM</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+
+        .admin-header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+
+        .back-btn {
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 2px solid rgba(255,255,255,0.3);
+            padding: 10px 20px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+            transform: translateY(-2px);
+        }
+
+        .users-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .user-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border: 2px solid #f0f0f0;
+            transition: all 0.3s ease;
+        }
+
+        .user-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+
+        .user-card.admin {
+            border-color: #667eea;
+            background: linear-gradient(135deg, #f8f9ff 0%, #e8ecff 100%);
+        }
+
+        .user-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .user-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .user-role {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .user-role.admin {
+            background: #667eea;
+            color: white;
+        }
+
+        .user-role.user {
+            background: #e9ecef;
+            color: #6c757d;
+        }
+
+        .user-info {
+            margin-bottom: 15px;
+        }
+
+        .user-info p {
+            margin: 5px 0;
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .user-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+        }
+
+        .status-active {
+            background: #28a745;
+        }
+
+        .status-inactive {
+            background: #dc3545;
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-edit {
+            background: #17a2b8;
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background: #138496;
+        }
+
+        .btn-deactivate {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-deactivate:hover {
+            background: #c82333;
+        }
+
+        .btn-activate {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-activate:hover {
+            background: #218838;
+        }
+
+        .btn-reset {
+            background: #ffc107;
+            color: #212529;
+        }
+
+        .btn-reset:hover {
+            background: #e0a800;
+        }
+
+        .add-user-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .add-user-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .submit-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #667eea;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #f5c6cb;
+            display: none;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+            display: none;
+        }
+
+        .audit-log-section {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+
+        .audit-log-section h2 {
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .audit-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        .audit-table th,
+        .audit-table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #e1e5e9;
+        }
+
+        .audit-table th {
+            background: #f8f9fa;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .audit-table tr:hover {
+            background: #f8f9fa;
+        }
+
+        .action-badge {
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .action-insert {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .action-update {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .action-delete {
+            background: #f8d7da;
+            color: #721c24;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>👥 Gerenciamento de Usuários</h1>
+            <a href="SCM_Supabase.html" class="back-btn">← Voltar ao Sistema</a>
+        </div>
+
+        <div id="errorMessage" class="error-message"></div>
+        <div id="successMessage" class="success-message"></div>
+
+        <!-- Adicionar Novo Usuário -->
+        <div class="add-user-section">
+            <h2>➕ Adicionar Novo Usuário</h2>
+            <form id="addUserForm">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newUserName">Nome Completo:</label>
+                        <input type="text" id="newUserName" name="fullName" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserEmail">Email:</label>
+                        <input type="email" id="newUserEmail" name="email" required>
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="newUserPassword">Senha:</label>
+                        <input type="password" id="newUserPassword" name="password" required minlength="6">
+                    </div>
+                    <div class="form-group">
+                        <label for="newUserRole">Função:</label>
+                        <select id="newUserRole" name="role" required>
+                            <option value="user">Usuário</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button type="submit" class="submit-btn">Criar Usuário</button>
+            </form>
+        </div>
+
+        <!-- Lista de Usuários -->
+        <div class="users-section">
+            <h2>👥 Usuários Cadastrados</h2>
+            <div class="loading" id="usersLoading">🔄 Carregando usuários...</div>
+            <div id="usersGrid" class="users-grid"></div>
+        </div>
+
+        <!-- Log de Auditoria -->
+        <div class="audit-log-section">
+            <h2>📋 Log de Auditoria</h2>
+            <div class="loading" id="auditLoading">🔄 Carregando log de auditoria...</div>
+            <table id="auditTable" class="audit-table" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Data/Hora</th>
+                        <th>Usuário</th>
+                        <th>Ação</th>
+                        <th>Tabela</th>
+                        <th>Registro</th>
+                    </tr>
+                </thead>
+                <tbody id="auditTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    
+    <script>
+        let allUsers = [];
+        let auditLogs = [];
+
+        // Verificar se usuário é admin ao carregar
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (!await auth.init()) {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            if (!await auth.isAdmin()) {
+                alert('Acesso negado. Apenas administradores podem acessar esta página.');
+                window.location.href = 'SCM_Supabase.html';
+                return;
+            }
+
+            await loadUsers();
+            await loadAuditLog();
+            setupEventListeners();
+        });
+
+        // Carregar usuários
+        async function loadUsers() {
+            try {
+                document.getElementById('usersLoading').style.display = 'block';
+                
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                allUsers = data || [];
+                renderUsers();
+            } catch (error) {
+                console.error('Erro ao carregar usuários:', error);
+                showError('Erro ao carregar usuários: ' + error.message);
+            } finally {
+                document.getElementById('usersLoading').style.display = 'none';
+            }
+        }
+
+        // Renderizar usuários
+        function renderUsers() {
+            const grid = document.getElementById('usersGrid');
+            grid.innerHTML = '';
+
+            if (allUsers.length === 0) {
+                grid.innerHTML = '<p style="text-align: center; color: #666; grid-column: 1/-1;">Nenhum usuário encontrado</p>';
+                return;
+            }
+
+            allUsers.forEach(user => {
+                const userCard = document.createElement('div');
+                userCard.className = `user-card ${user.role}`;
+                
+                userCard.innerHTML = `
+                    <div class="user-header">
+                        <div class="user-name">${user.full_name || 'Nome não informado'}</div>
+                        <div class="user-role ${user.role}">${user.role}</div>
+                    </div>
+                    
+                    <div class="user-info">
+                        <p><strong>Email:</strong> ${user.email}</p>
+                        <p><strong>Criado em:</strong> ${new Date(user.created_at).toLocaleString('pt-BR')}</p>
+                        <p><strong>Última atualização:</strong> ${new Date(user.updated_at).toLocaleString('pt-BR')}</p>
+                    </div>
+                    
+                    <div class="user-status">
+                        <div class="status-indicator ${user.is_active ? 'status-active' : 'status-inactive'}"></div>
+                        <span>${user.is_active ? 'Ativo' : 'Inativo'}</span>
+                    </div>
+                    
+                    <div class="user-actions">
+                        ${user.is_active 
+                            ? `<button class="action-btn btn-deactivate" onclick="toggleUserStatus('${user.id}', false)">Desativar</button>`
+                            : `<button class="action-btn btn-activate" onclick="toggleUserStatus('${user.id}', true)">Ativar</button>`
+                        }
+                        <button class="action-btn btn-reset" onclick="resetUserPassword('${user.id}')">Resetar Senha</button>
+                        ${user.role !== 'admin' 
+                            ? `<button class="action-btn btn-edit" onclick="promoteToAdmin('${user.id}')">Tornar Admin</button>`
+                            : ''
+                        }
+                    </div>
+                `;
+                
+                grid.appendChild(userCard);
+            });
+        }
+
+        // Carregar log de auditoria
+        async function loadAuditLog() {
+            try {
+                document.getElementById('auditLoading').style.display = 'block';
+                
+                const { data, error } = await supabaseClient
+                    .from('audit_log')
+                    .select(`
+                        *,
+                        users:user_id(email, full_name)
+                    `)
+                    .order('created_at', { ascending: false })
+                    .limit(50);
+
+                if (error) throw error;
+
+                auditLogs = data || [];
+                renderAuditLog();
+            } catch (error) {
+                console.error('Erro ao carregar log de auditoria:', error);
+                showError('Erro ao carregar log de auditoria: ' + error.message);
+            } finally {
+                document.getElementById('auditLoading').style.display = 'none';
+            }
+        }
+
+        // Renderizar log de auditoria
+        function renderAuditLog() {
+            const tableBody = document.getElementById('auditTableBody');
+            const table = document.getElementById('auditTable');
+            
+            tableBody.innerHTML = '';
+
+            if (auditLogs.length === 0) {
+                tableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: #666;">Nenhum log encontrado</td></tr>';
+            } else {
+                auditLogs.forEach(log => {
+                    const row = document.createElement('tr');
+                    
+                    const userName = log.users ? (log.users.full_name || log.users.email) : 'Usuário removido';
+                    const actionClass = log.action.toLowerCase();
+                    
+                    row.innerHTML = `
+                        <td>${new Date(log.created_at).toLocaleString('pt-BR')}</td>
+                        <td>${userName}</td>
+                        <td><span class="action-badge action-${actionClass}">${log.action}</span></td>
+                        <td>${log.table_name}</td>
+                        <td>${log.record_id || '-'}</td>
+                    `;
+                    
+                    tableBody.appendChild(row);
+                });
+            }
+            
+            table.style.display = 'table';
+        }
+
+        // Event Listeners
+        function setupEventListeners() {
+            document.getElementById('addUserForm').addEventListener('submit', handleAddUser);
+        }
+
+        // Adicionar novo usuário
+        async function handleAddUser(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const userData = {
+                email: formData.get('email'),
+                password: formData.get('password'),
+                full_name: formData.get('fullName'),
+                role: formData.get('role')
+            };
+
+            try {
+                // Criar usuário no Supabase Auth
+                const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
+                    email: userData.email,
+                    password: userData.password,
+                    user_metadata: {
+                        full_name: userData.full_name
+                    }
+                });
+
+                if (authError) throw authError;
+
+                // Criar perfil na tabela users
+                const { error: profileError } = await supabaseClient
+                    .from('users')
+                    .insert({
+                        id: authData.user.id,
+                        email: userData.email,
+                        full_name: userData.full_name,
+                        role: userData.role,
+                        is_active: true
+                    });
+
+                if (profileError) throw profileError;
+
+                showSuccess('Usuário criado com sucesso!');
+                e.target.reset();
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('Erro ao criar usuário:', error);
+                showError('Erro ao criar usuário: ' + error.message);
+            }
+        }
+
+        // Toggle status do usuário
+        async function toggleUserStatus(userId, isActive) {
+            try {
+                const { error } = await supabaseClient
+                    .from('users')
+                    .update({ is_active: isActive })
+                    .eq('id', userId);
+
+                if (error) throw error;
+
+                showSuccess(`Usuário ${isActive ? 'ativado' : 'desativado'} com sucesso!`);
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('Erro ao alterar status:', error);
+                showError('Erro ao alterar status: ' + error.message);
+            }
+        }
+
+        // Resetar senha
+        async function resetUserPassword(userId) {
+            const user = allUsers.find(u => u.id === userId);
+            if (!user) return;
+
+            const newPassword = prompt('Digite a nova senha (mínimo 6 caracteres):');
+            if (!newPassword || newPassword.length < 6) {
+                showError('Senha deve ter pelo menos 6 caracteres');
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient.auth.admin.updateUserById(userId, {
+                    password: newPassword
+                });
+
+                if (error) throw error;
+
+                showSuccess('Senha resetada com sucesso!');
+                
+            } catch (error) {
+                console.error('Erro ao resetar senha:', error);
+                showError('Erro ao resetar senha: ' + error.message);
+            }
+        }
+
+        // Promover a admin
+        async function promoteToAdmin(userId) {
+            if (!confirm('Tem certeza que deseja promover este usuário a administrador?')) {
+                return;
+            }
+
+            try {
+                const { error } = await supabaseClient
+                    .from('users')
+                    .update({ role: 'admin' })
+                    .eq('id', userId);
+
+                if (error) throw error;
+
+                showSuccess('Usuário promovido a administrador com sucesso!');
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('Erro ao promover usuário:', error);
+                showError('Erro ao promover usuário: ' + error.message);
+            }
+        }
+
+        // Funções auxiliares
+        function showError(message) {
+            const errorDiv = document.getElementById('errorMessage');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+            setTimeout(() => {
+                errorDiv.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(message) {
+            const successDiv = document.getElementById('successMessage');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            setTimeout(() => {
+                successDiv.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - SCM Sistema de Controle de Materiais</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .login-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+        }
+
+        .login-card {
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            padding: 40px;
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        .login-header {
+            margin-bottom: 30px;
+        }
+
+        .login-header h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2rem;
+        }
+
+        .login-header p {
+            color: #666;
+            margin: 0;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .form-group input.error {
+            border-color: #e74c3c;
+        }
+
+        .error-message {
+            color: #e74c3c;
+            font-size: 14px;
+            margin-top: 5px;
+            display: none;
+        }
+
+        .login-button {
+            width: 100%;
+            padding: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            margin-bottom: 20px;
+        }
+
+        .login-button:hover {
+            transform: translateY(-2px);
+        }
+
+        .login-button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .login-links {
+            text-align: center;
+        }
+
+        .login-links a {
+            color: #667eea;
+            text-decoration: none;
+            margin: 0 10px;
+            font-size: 14px;
+        }
+
+        .login-links a:hover {
+            text-decoration: underline;
+        }
+
+        .loading {
+            display: none;
+            color: #667eea;
+            margin-top: 10px;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #c3e6cb;
+            display: none;
+        }
+
+        .register-section {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e1e5e9;
+        }
+
+        .register-section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .register-button {
+            width: 100%;
+            padding: 12px;
+            background: transparent;
+            color: #667eea;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .register-button:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .back-link {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            padding: 10px 15px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            transition: background 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(255,255,255,0.3);
+        }
+    </style>
+</head>
+<body>
+    <a href="SCM_Supabase.html" class="back-link">← Voltar</a>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <h1>📦 SCM</h1>
+                <p>Sistema de Controle de Materiais</p>
+            </div>
+
+            <div id="successMessage" class="success-message"></div>
+
+            <!-- Formulário de Login -->
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required>
+                    <div class="error-message" id="emailError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Senha:</label>
+                    <input type="password" id="password" name="password" required>
+                    <div class="error-message" id="passwordError"></div>
+                </div>
+
+                <button type="submit" class="login-button" id="loginButton">
+                    Entrar
+                </button>
+
+                <div class="loading" id="loginLoading">
+                    🔄 Entrando...
+                </div>
+            </form>
+
+            <div class="login-links">
+                <a href="#" id="forgotPasswordLink">Esqueci minha senha</a>
+            </div>
+
+            <!-- Seção de Registro -->
+            <div class="register-section">
+                <h3>Primeiro acesso?</h3>
+                <button type="button" class="register-button" id="registerButton">
+                    Criar conta
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulário de Registro (Modal) -->
+    <div id="registerModal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 40px; border-radius: 15px; width: 90%; max-width: 400px;">
+            <h2 style="text-align: center; margin-bottom: 30px; color: #333;">Criar Conta</h2>
+            
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="registerName">Nome Completo:</label>
+                    <input type="text" id="registerName" name="fullName" required>
+                    <div class="error-message" id="registerNameError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerEmail">Email:</label>
+                    <input type="email" id="registerEmail" name="email" required>
+                    <div class="error-message" id="registerEmailError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="registerPassword">Senha:</label>
+                    <input type="password" id="registerPassword" name="password" required minlength="6">
+                    <div class="error-message" id="registerPasswordError"></div>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirmar Senha:</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" required>
+                    <div class="error-message" id="confirmPasswordError"></div>
+                </div>
+
+                <button type="submit" class="login-button" id="registerSubmitButton">
+                    Criar Conta
+                </button>
+
+                <div class="loading" id="registerLoading">
+                    🔄 Criando conta...
+                </div>
+            </form>
+
+            <button type="button" id="closeRegisterModal" style="position: absolute; top: 15px; right: 15px; background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">×</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    
+    <script>
+        // Elementos do DOM
+        const loginForm = document.getElementById('loginForm');
+        const registerModal = document.getElementById('registerModal');
+        const registerForm = document.getElementById('registerForm');
+        const registerButton = document.getElementById('registerButton');
+        const closeRegisterModal = document.getElementById('closeRegisterModal');
+        const forgotPasswordLink = document.getElementById('forgotPasswordLink');
+        const successMessage = document.getElementById('successMessage');
+
+        // Verificar se já está logado
+        document.addEventListener('DOMContentLoaded', async () => {
+            if (await auth.init()) {
+                window.location.href = 'SCM_Supabase.html';
+            }
+        });
+
+        // Event Listeners
+        loginForm.addEventListener('submit', handleLogin);
+        registerForm.addEventListener('submit', handleRegister);
+        registerButton.addEventListener('click', () => {
+            registerModal.style.display = 'block';
+        });
+        closeRegisterModal.addEventListener('click', () => {
+            registerModal.style.display = 'none';
+            clearForm(registerForm);
+        });
+        forgotPasswordLink.addEventListener('click', handleForgotPassword);
+
+        // Fechar modal clicando fora
+        registerModal.addEventListener('click', (e) => {
+            if (e.target === registerModal) {
+                registerModal.style.display = 'none';
+                clearForm(registerForm);
+            }
+        });
+
+        // Função de Login
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const loginButton = document.getElementById('loginButton');
+            const loginLoading = document.getElementById('loginLoading');
+
+            // Validação básica
+            if (!email || !password) {
+                showError('email', 'Email é obrigatório');
+                showError('password', 'Senha é obrigatória');
+                return;
+            }
+
+            // UI Loading
+            loginButton.disabled = true;
+            loginLoading.style.display = 'block';
+            clearErrors();
+
+            try {
+                const result = await auth.login(email, password);
+                
+                if (result.success) {
+                    showSuccess('Login realizado com sucesso! Redirecionando...');
+                    setTimeout(() => {
+                        window.location.href = 'SCM_Supabase.html';
+                    }, 1500);
+                } else {
+                    showError('password', result.error);
+                }
+            } catch (error) {
+                showError('password', 'Erro inesperado. Tente novamente.');
+            } finally {
+                loginButton.disabled = false;
+                loginLoading.style.display = 'none';
+            }
+        }
+
+        // Função de Registro
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const fullName = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const registerSubmitButton = document.getElementById('registerSubmitButton');
+            const registerLoading = document.getElementById('registerLoading');
+
+            // Validação
+            clearRegisterErrors();
+            let hasErrors = false;
+
+            if (!fullName.trim()) {
+                showRegisterError('registerName', 'Nome é obrigatório');
+                hasErrors = true;
+            }
+
+            if (!email.trim()) {
+                showRegisterError('registerEmail', 'Email é obrigatório');
+                hasErrors = true;
+            }
+
+            if (password.length < 6) {
+                showRegisterError('registerPassword', 'Senha deve ter pelo menos 6 caracteres');
+                hasErrors = true;
+            }
+
+            if (password !== confirmPassword) {
+                showRegisterError('confirmPassword', 'Senhas não coincidem');
+                hasErrors = true;
+            }
+
+            if (hasErrors) return;
+
+            // UI Loading
+            registerSubmitButton.disabled = true;
+            registerLoading.style.display = 'block';
+
+            try {
+                const result = await auth.signUp(email, password, fullName);
+                
+                if (result.success) {
+                    showSuccess('Conta criada com sucesso! Verifique seu email para confirmar a conta.');
+                    registerModal.style.display = 'none';
+                    clearForm(registerForm);
+                } else {
+                    showRegisterError('registerEmail', result.error);
+                }
+            } catch (error) {
+                showRegisterError('registerEmail', 'Erro inesperado. Tente novamente.');
+            } finally {
+                registerSubmitButton.disabled = false;
+                registerLoading.style.display = 'none';
+            }
+        }
+
+        // Função de Esqueci Senha
+        async function handleForgotPassword(e) {
+            e.preventDefault();
+            
+            const email = prompt('Digite seu email para recuperação de senha:');
+            if (!email) return;
+
+            try {
+                const result = await auth.resetPassword(email);
+                if (result.success) {
+                    alert('Email de recuperação enviado! Verifique sua caixa de entrada.');
+                } else {
+                    alert('Erro: ' + result.error);
+                }
+            } catch (error) {
+                alert('Erro inesperado. Tente novamente.');
+            }
+        }
+
+        // Funções auxiliares
+        function showError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorDiv = document.getElementById(fieldId + 'Error');
+            
+            field.classList.add('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function showRegisterError(fieldId, message) {
+            const field = document.getElementById(fieldId);
+            const errorDiv = document.getElementById(fieldId + 'Error');
+            
+            field.classList.add('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+
+        function clearErrors() {
+            const errorMessages = document.querySelectorAll('#loginForm .error-message');
+            const errorFields = document.querySelectorAll('#loginForm input.error');
+            
+            errorMessages.forEach(msg => {
+                msg.style.display = 'none';
+                msg.textContent = '';
+            });
+            
+            errorFields.forEach(field => {
+                field.classList.remove('error');
+            });
+        }
+
+        function clearRegisterErrors() {
+            const errorMessages = document.querySelectorAll('#registerForm .error-message');
+            const errorFields = document.querySelectorAll('#registerForm input.error');
+            
+            errorMessages.forEach(msg => {
+                msg.style.display = 'none';
+                msg.textContent = '';
+            });
+            
+            errorFields.forEach(field => {
+                field.classList.remove('error');
+            });
+        }
+
+        function clearForm(form) {
+            form.reset();
+            clearRegisterErrors();
+        }
+
+        function showSuccess(message) {
+            successMessage.textContent = message;
+            successMessage.style.display = 'block';
+            setTimeout(() => {
+                successMessage.style.display = 'none';
+            }, 5000);
+        }
+    </script>
+</body>
+</html>
