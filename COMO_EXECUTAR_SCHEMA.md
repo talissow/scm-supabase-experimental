@@ -15,9 +15,11 @@ O erro "Could not find the table 'public.users'" indica que as tabelas não fora
 2. Clique em **"New query"** para criar uma nova consulta
 
 ### Passo 3: Executar o Schema
-1. **Copie TODO o conteúdo** do arquivo `supabase_schema.sql`
+1. **Copie TODO o conteúdo** do arquivo `supabase_schema_safe.sql` (script seguro)
 2. **Cole no SQL Editor** do Supabase
 3. **Clique em "Run"** para executar
+
+**⚠️ IMPORTANTE:** Use o arquivo `supabase_schema_safe.sql` que verifica se as tabelas existem antes de criá-las, evitando erros de "tabela já existe".
 
 ### Passo 4: Verificar se Funcionou
 Após executar, você deve ver:
