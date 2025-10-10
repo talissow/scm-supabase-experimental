@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Acesso Rápido - Supabase</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .container {
+            background: white;
+            color: #333;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .header h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .project-info {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        .project-info h3 {
+            color: #495057;
+            margin-bottom: 15px;
+        }
+        .info-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 5px;
+            border-left: 4px solid #007bff;
+        }
+        .info-item strong {
+            color: #007bff;
+        }
+        .btn {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 10px 5px;
+            transition: background 0.3s;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-success:hover {
+            background: #1e7e34;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+        .btn-warning:hover {
+            background: #e0a800;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-danger:hover {
+            background: #c82333;
+        }
+        .section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+        .section h3 {
+            color: #495057;
+            margin-bottom: 15px;
+        }
+        .step {
+            margin: 15px 0;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            border-left: 4px solid #28a745;
+        }
+        .step-number {
+            background: #28a745;
+            color: white;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        .url-box {
+            background: #e9ecef;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            margin: 10px 0;
+            word-break: break-all;
+        }
+        .copy-btn {
+            background: #6c757d;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+        }
+        .copy-btn:hover {
+            background: #5a6268;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🚀 Acesso Rápido - Supabase</h1>
+            <p>Configure seu projeto Supabase em poucos cliques</p>
+        </div>
+
+        <div class="project-info">
+            <h3>📋 Informações do Projeto</h3>
+            <div class="info-item">
+                <strong>Project ID:</strong> kaqkzrngebxfuvquromi
+                <button class="copy-btn" onclick="copyToClipboard('kaqkzrngebxfuvquromi')">Copiar</button>
+            </div>
+            <div class="info-item">
+                <strong>URL do Projeto:</strong> https://kaqkzrngebxfuvquromi.supabase.co
+                <button class="copy-btn" onclick="copyToClipboard('https://kaqkzrngebxfuvquromi.supabase.co')">Copiar</button>
+            </div>
+            <div class="info-item">
+                <strong>Dashboard:</strong> https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi
+                <button class="copy-btn" onclick="copyToClipboard('https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi')">Copiar</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🔗 Links Diretos</h3>
+            <a href="https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi" target="_blank" class="btn btn-success">
+                📊 Abrir Dashboard Supabase
+            </a>
+            <a href="https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi/auth/settings" target="_blank" class="btn">
+                🔐 Configurar Authentication
+            </a>
+            <a href="https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi/sql" target="_blank" class="btn">
+                📝 SQL Editor
+            </a>
+            <a href="https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi/table-editor" target="_blank" class="btn">
+                🗄️ Table Editor
+            </a>
+        </div>
+
+        <div class="section">
+            <h3>⚙️ Configuração Rápida</h3>
+            
+            <div class="step">
+                <span class="step-number">1</span>
+                <strong>Configurar Authentication</strong>
+                <p>Clique no botão "Configurar Authentication" acima e configure:</p>
+                <div class="url-box">
+                    Site URL: https://scm-supabase.vercel.app
+                </div>
+                <div class="url-box">
+                    Redirect URLs:<br>
+                    https://scm-supabase.vercel.app<br>
+                    https://scm-supabase.vercel.app/login.html<br>
+                    https://scm-supabase.vercel.app/SCM_Supabase.html<br>
+                    https://scm-supabase.vercel.app/admin-interno.html<br>
+                    https://scm-supabase.vercel.app/**
+                </div>
+                <p><strong>Desabilitar:</strong> Email confirmations e Email change confirmations</p>
+            </div>
+
+            <div class="step">
+                <span class="step-number">2</span>
+                <strong>Executar Schema SQL</strong>
+                <p>Clique no botão "SQL Editor" acima e execute o arquivo:</p>
+                <div class="url-box">supabase_schema_public.sql</div>
+                <p>Deve mostrar "Success. No rows returned"</p>
+            </div>
+
+            <div class="step">
+                <span class="step-number">3</span>
+                <strong>Verificar Tabelas</strong>
+                <p>Clique no botão "Table Editor" acima e confirme que existem:</p>
+                <div class="url-box">
+                    ✅ users<br>
+                    ✅ products<br>
+                    ✅ movements<br>
+                    ✅ custom_types<br>
+                    ✅ audit_log
+                </div>
+            </div>
+
+            <div class="step">
+                <span class="step-number">4</span>
+                <strong>Testar Sistema</strong>
+                <p>Execute os testes para verificar se tudo está funcionando:</p>
+                <a href="https://scm-supabase.vercel.app/TESTE_DIAGNOSTICO_COMPLETO.html" target="_blank" class="btn btn-warning">
+                    🧪 Diagnóstico Completo
+                </a>
+                <a href="https://scm-supabase.vercel.app/CRIAR_ADMIN.html" target="_blank" class="btn btn-success">
+                    👑 Criar Admin
+                </a>
+            </div>
+        </div>
+
+        <div class="section">
+            <h3>🧪 Testes do Sistema</h3>
+            <a href="https://scm-supabase.vercel.app/TESTE_DIAGNOSTICO_COMPLETO.html" target="_blank" class="btn">
+                🔍 Diagnóstico Completo
+            </a>
+            <a href="https://scm-supabase.vercel.app/TESTE_CONEXAO.html" target="_blank" class="btn">
+                🔗 Teste de Conexão
+            </a>
+            <a href="https://scm-supabase.vercel.app/TESTE_CONFIG_SUPABASE.html" target="_blank" class="btn">
+                ⚙️ Teste de Configuração
+            </a>
+            <a href="https://scm-supabase.vercel.app/login.html" target="_blank" class="btn btn-success">
+                🔐 Teste de Login
+            </a>
+        </div>
+
+        <div class="section">
+            <h3>📚 Documentação</h3>
+            <p>Para instruções detalhadas, consulte:</p>
+            <ul>
+                <li><strong>CONFIGURAR_SUPABASE_COMPLETO.md</strong> - Guia completo de configuração</li>
+                <li><strong>CORRIGIR_ERRO_USER_NOT_ALLOWED.md</strong> - Solução para erro de usuário</li>
+                <li><strong>ADMIN_INTERNO.md</strong> - Como usar o admin interno</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(function() {
+                alert('Copiado para a área de transferência!');
+            }, function(err) {
+                console.error('Erro ao copiar: ', err);
+                // Fallback para navegadores mais antigos
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                alert('Copiado para a área de transferência!');
+            });
+        }
+    </script>
+</body>
+</html>

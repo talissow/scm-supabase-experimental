@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagnóstico Completo - SCM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .test-success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .test-error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .test-warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .test-info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .btn-success {
+            background: #28a745;
+        }
+        .btn-danger {
+            background: #dc3545;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #000;
+        }
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background: #28a745; }
+        .status-error { background: #dc3545; }
+        .status-warning { background: #ffc107; }
+        .status-info { background: #17a2b8; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Diagnóstico Completo - SCM</h1>
+        <p>Este teste verifica todas as configurações do Supabase e identifica problemas.</p>
+        
+        <button onclick="runFullDiagnostic()" class="btn btn-success">🚀 Executar Diagnóstico Completo</button>
+        <button onclick="clearLogs()" class="btn btn-warning">🗑️ Limpar Logs</button>
+        <button onclick="exportLogs()" class="btn">📥 Exportar Logs</button>
+    </div>
+
+    <div class="container">
+        <h2>📊 Resultados do Diagnóstico</h2>
+        <div id="diagnosticResults">
+            <p>Clique em "Executar Diagnóstico Completo" para começar.</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>📝 Logs Detalhados</h2>
+        <div id="logs" class="log">
+            Aguardando diagnóstico...
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    
+    <script>
+        let logs = [];
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString('pt-BR');
+            const logEntry = `[${timestamp}] ${message}`;
+            logs.push({ message: logEntry, type });
+            
+            const logsDiv = document.getElementById('logs');
+            const color = type === 'error' ? '#dc3545' : 
+                         type === 'success' ? '#28a745' : 
+                         type === 'warning' ? '#ffc107' : '#17a2b8';
+            
+            logsDiv.innerHTML += `<div style="color: ${color};">${logEntry}</div>`;
+            logsDiv.scrollTop = logsDiv.scrollHeight;
+        }
+        
+        function clearLogs() {
+            logs = [];
+            document.getElementById('logs').innerHTML = 'Logs limpos...';
+            document.getElementById('diagnosticResults').innerHTML = '<p>Clique em "Executar Diagnóstico Completo" para começar.</p>';
+        }
+        
+        function exportLogs() {
+            const logText = logs.map(log => log.message).join('\n');
+            const blob = new Blob([logText], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'diagnostico_scm.txt';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
+        async function runFullDiagnostic() {
+            log('🚀 Iniciando diagnóstico completo...', 'info');
+            
+            const results = {
+                supabaseConfig: false,
+                supabaseConnection: false,
+                tablesExist: false,
+                authSettings: false,
+                userCreation: false,
+                overall: false
+            };
+            
+            // 1. Verificar configuração do Supabase
+            log('1️⃣ Verificando configuração do Supabase...', 'info');
+            try {
+                if (typeof SUPABASE_URL !== 'undefined' && typeof SUPABASE_ANON_KEY !== 'undefined') {
+                    log('✅ Configuração encontrada', 'success');
+                    log(`   URL: ${SUPABASE_URL}`, 'info');
+                    log(`   Key: ${SUPABASE_ANON_KEY.substring(0, 20)}...`, 'info');
+                    results.supabaseConfig = true;
+                } else {
+                    log('❌ Configuração não encontrada', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro na configuração: ${error.message}`, 'error');
+            }
+            
+            // 2. Testar conexão com Supabase
+            log('2️⃣ Testando conexão com Supabase...', 'info');
+            try {
+                if (typeof initSupabase === 'function') {
+                    const initialized = initSupabase();
+                    if (initialized) {
+                        log('✅ Supabase inicializado com sucesso', 'success');
+                        results.supabaseConnection = true;
+                    } else {
+                        log('❌ Falha ao inicializar Supabase', 'error');
+                    }
+                } else {
+                    log('❌ Função initSupabase não encontrada', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro na conexão: ${error.message}`, 'error');
+            }
+            
+            // 3. Verificar se tabelas existem
+            log('3️⃣ Verificando existência das tabelas...', 'info');
+            try {
+                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                    const tables = ['users', 'products', 'movements', 'custom_types', 'audit_log'];
+                    let tablesFound = 0;
+                    
+                    for (const table of tables) {
+                        try {
+                            const { data, error } = await supabaseClient
+                                .from(table)
+                                .select('*')
+                                .limit(1);
+                            
+                            if (error) {
+                                log(`❌ Tabela ${table}: ${error.message}`, 'error');
+                            } else {
+                                log(`✅ Tabela ${table}: OK`, 'success');
+                                tablesFound++;
+                            }
+                        } catch (tableError) {
+                            log(`❌ Tabela ${table}: ${tableError.message}`, 'error');
+                        }
+                    }
+                    
+                    if (tablesFound === tables.length) {
+                        results.tablesExist = true;
+                        log('✅ Todas as tabelas existem', 'success');
+                    } else {
+                        log(`⚠️ Apenas ${tablesFound}/${tables.length} tabelas encontradas`, 'warning');
+                    }
+                } else {
+                    log('❌ Cliente Supabase não disponível', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro ao verificar tabelas: ${error.message}`, 'error');
+            }
+            
+            // 4. Testar configurações de autenticação
+            log('4️⃣ Testando configurações de autenticação...', 'info');
+            try {
+                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                    // Tentar obter sessão atual
+                    const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+                    
+                    if (sessionError) {
+                        log(`❌ Erro na sessão: ${sessionError.message}`, 'error');
+                    } else {
+                        log('✅ Autenticação configurada', 'success');
+                        results.authSettings = true;
+                    }
+                } else {
+                    log('❌ Cliente Supabase não disponível para teste de auth', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro na autenticação: ${error.message}`, 'error');
+            }
+            
+            // 5. Testar criação de usuário (simulado)
+            log('5️⃣ Testando permissões de criação de usuário...', 'info');
+            try {
+                if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+                    // Tentar criar um usuário de teste (não vai funcionar, mas vai mostrar o erro)
+                    const testEmail = `test-${Date.now()}@example.com`;
+                    const testPassword = 'test123456';
+                    
+                    log(`   Tentando criar usuário: ${testEmail}`, 'info');
+                    
+                    const { data, error } = await supabaseClient.auth.signUp({
+                        email: testEmail,
+                        password: testPassword
+                    });
+                    
+                    if (error) {
+                        log(`❌ Erro ao criar usuário: ${error.message}`, 'error');
+                        if (error.message.includes('User not allowed')) {
+                            log('   💡 SOLUÇÃO: Configure as URLs no Supabase Dashboard', 'warning');
+                            log('   💡 Authentication → Settings → Site URL e Redirect URLs', 'warning');
+                        }
+                    } else {
+                        log('✅ Criação de usuário funcionando', 'success');
+                        results.userCreation = true;
+                    }
+                } else {
+                    log('❌ Cliente Supabase não disponível para teste de criação', 'error');
+                }
+            } catch (error) {
+                log(`❌ Erro no teste de criação: ${error.message}`, 'error');
+            }
+            
+            // Calcular resultado geral
+            const totalTests = Object.keys(results).length - 1; // -1 para 'overall'
+            const passedTests = Object.values(results).filter(Boolean).length - 1; // -1 para 'overall'
+            results.overall = passedTests === totalTests;
+            
+            // Exibir resultados
+            displayResults(results);
+            
+            log(`\n🎯 Diagnóstico concluído: ${passedTests}/${totalTests} testes passaram`, 
+                results.overall ? 'success' : 'warning');
+        }
+        
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('diagnosticResults');
+            
+            const testItems = [
+                { key: 'supabaseConfig', name: 'Configuração do Supabase', icon: '⚙️' },
+                { key: 'supabaseConnection', name: 'Conexão com Supabase', icon: '🔗' },
+                { key: 'tablesExist', name: 'Tabelas do Banco', icon: '🗄️' },
+                { key: 'authSettings', name: 'Configurações de Auth', icon: '🔐' },
+                { key: 'userCreation', name: 'Criação de Usuários', icon: '👤' }
+            ];
+            
+            let html = '<div class="test-section test-info">';
+            html += '<h3>📊 Resumo dos Testes</h3>';
+            
+            testItems.forEach(item => {
+                const status = results[item.key] ? 'success' : 'error';
+                const statusClass = results[item.key] ? 'status-success' : 'status-error';
+                const statusText = results[item.key] ? 'PASSOU' : 'FALHOU';
+                
+                html += `<div class="test-${status}">
+                    <span class="status-indicator ${statusClass}"></span>
+                    ${item.icon} ${item.name}: <strong>${statusText}</strong>
+                </div>`;
+            });
+            
+            html += '</div>';
+            
+            // Adicionar recomendações
+            if (!results.overall) {
+                html += '<div class="test-section test-warning">';
+                html += '<h3>🔧 Ações Recomendadas</h3>';
+                
+                if (!results.supabaseConfig) {
+                    html += '<p>• Verificar arquivo supabase-config.js</p>';
+                }
+                if (!results.supabaseConnection) {
+                    html += '<p>• Verificar URL e chave do Supabase</p>';
+                }
+                if (!results.tablesExist) {
+                    html += '<p>• Executar schema SQL no Supabase</p>';
+                }
+                if (!results.authSettings) {
+                    html += '<p>• Configurar Authentication no Supabase Dashboard</p>';
+                }
+                if (!results.userCreation) {
+                    html += '<p>• Adicionar URLs permitidas no Supabase</p>';
+                    html += '<p>• Desabilitar confirmação de email</p>';
+                }
+                
+                html += '</div>';
+            } else {
+                html += '<div class="test-section test-success">';
+                html += '<h3>🎉 Todos os Testes Passaram!</h3>';
+                html += '<p>O sistema está configurado corretamente.</p>';
+                html += '</div>';
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            log('🔍 Sistema de diagnóstico carregado', 'info');
+        });
+    </script>
+</body>
+</html>
