@@ -559,6 +559,9 @@ function initEventListeners() {
     // Botão de importação rápida
     document.getElementById('quickImportBtn').addEventListener('click', quickImport);
     
+    // Botão de limpar estoque
+    document.getElementById('clearAllBtn').addEventListener('click', clearAllStock);
+    
     // Carregar informações do último arquivo
     loadLastImportInfo();
     
@@ -1967,5 +1970,100 @@ function quickImport() {
     
     currentImportType = lastImportType;
     fileInput.click();
+}
+
+// ===== LIMPAR TODO O ESTOQUE =====
+async function clearAllStock() {
+    // Verificar se há produtos
+    if (products.length === 0) {
+        alert('Não há materiais para limpar!');
+        return;
+    }
+    
+    // Primeira confirmação
+    const confirmMsg1 = `⚠️ ATENÇÃO - AÇÃO IRREVERSÍVEL!\n\n` +
+                       `Você está prestes a EXCLUIR TODOS os ${products.length} materiais do estoque.\n\n` +
+                       `Essa ação NÃO pode ser desfeita!\n\n` +
+                       `Deseja continuar?`;
+    
+    if (!confirm(confirmMsg1)) {
+        return;
+    }
+    
+    // Segunda confirmação (segurança adicional)
+    const confirmMsg2 = `⚠️ ÚLTIMA CONFIRMAÇÃO!\n\n` +
+                       `Tem CERTEZA ABSOLUTA que deseja excluir TODOS os ${products.length} materiais?\n\n` +
+                       `Digite "CONFIRMAR" para prosseguir (ou clique em Cancelar para abortar)`;
+    
+    const userInput = prompt(confirmMsg2);
+    
+    if (userInput !== 'CONFIRMAR') {
+        alert('Operação cancelada. Nenhum material foi excluído.');
+        return;
+    }
+    
+    try {
+        // Mostrar mensagem de processamento
+        alert('Processando... Por favor aguarde.');
+        
+        // Limpar do Supabase se online
+        if (isSupabaseOnline && supabaseInitialized) {
+            try {
+                console.log('🗑️ Limpando dados do Supabase...');
+                
+                // Excluir todas as movimentações primeiro (foreign key)
+                const { error: movementsError } = await supabaseClient
+                    .from('movements')
+                    .delete()
+                    .neq('id', ''); // Delete all records
+                
+                if (movementsError) {
+                    console.error('Erro ao excluir movimentações:', movementsError);
+                }
+                
+                // Excluir todos os produtos
+                const { error: productsError } = await supabaseClient
+                    .from('products')
+                    .delete()
+                    .neq('id', ''); // Delete all records
+                
+                if (productsError) {
+                    throw productsError;
+                }
+                
+                console.log('✅ Dados excluídos do Supabase');
+            } catch (error) {
+                console.error('❌ Erro ao limpar Supabase:', error);
+                alert('Erro ao limpar dados na nuvem. Continuando com limpeza local...');
+            }
+        }
+        
+        // Limpar do IndexedDB local
+        await clearAllData();
+        
+        // Limpar arrays na memória
+        products = [];
+        movements = [];
+        
+        // Invalidar cache
+        invalidateCache();
+        
+        // Limpar localStorage também
+        localStorage.removeItem('products');
+        localStorage.removeItem('movements');
+        
+        // Atualizar interface
+        populateFilterSelects();
+        renderProducts();
+        renderGroupedView();
+        updateAlertCounter();
+        
+        alert('✅ Estoque limpo com sucesso!\n\nTodos os materiais foram excluídos do sistema.');
+        
+        console.log('✅ Estoque completamente limpo!');
+    } catch (error) {
+        console.error('❌ Erro ao limpar estoque:', error);
+        alert('❌ Erro ao limpar estoque: ' + error.message);
+    }
 }
 
