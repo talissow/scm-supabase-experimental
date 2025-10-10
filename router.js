@@ -9,7 +9,7 @@ class SCMRouter {
             '/dashboard': 'SCM_Supabase.html#dashboard',
             '/lista': 'SCM_Supabase.html#list',
             '/agrupado': 'SCM_Supabase.html#grouped',
-            '/usuarios': 'usuarios.html',
+            '/usuarios': 'SCM_Supabase.html#admin',
             '/admin': 'admin-interno.html'
         };
         
@@ -182,7 +182,7 @@ class SCMRouter {
                 breadcrumbs.push('📦 SCM', '📦 Agrupado por Tipo');
                 break;
             case '/usuarios':
-                breadcrumbs.push('👥 Usuários');
+                breadcrumbs.push('📦 SCM', '👥 Usuários');
                 break;
             case '/admin':
                 breadcrumbs.push('⚙️ Administração');

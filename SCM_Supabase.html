@@ -27,7 +27,12 @@
                 <h1>📦 Controle de Materiais</h1>
                 <div class="user-info">
                     <span id="userName">Usuário</span>
-                    <button id="logoutButton" class="logout-btn">Sair</button>
+                    <div class="user-actions">
+                        <button id="adminButton" class="admin-btn" style="display: none;" title="Painel Administrativo">
+                            ⚙️ Admin
+                        </button>
+                        <button id="logoutButton" class="logout-btn">Sair</button>
+                    </div>
                 </div>
             </div>
             <div class="alert-counter" id="alertCounter">
@@ -206,6 +211,7 @@
                     <button class="tab-button" data-tab="dashboard">📊 Dashboard</button>
                     <button class="tab-button active" data-tab="list">📋 Lista Completa</button>
                     <button class="tab-button" data-tab="grouped">📦 Agrupado por Tipo</button>
+                    <button class="tab-button admin-only" data-tab="admin" style="display: none;">👥 Usuários</button>
                 </div>
 
                 <!-- Aba: Dashboard -->
@@ -390,6 +396,83 @@
                         <p class="empty-state">Nenhum material cadastrado.</p>
                     </div>
                 </div>
+
+                <!-- Aba: Administração -->
+                <div id="adminTab" class="tab-content">
+                    <div class="admin-header">
+                        <h2>👥 Gerenciamento de Usuários</h2>
+                        <button class="btn btn-success" onclick="showCreateUserModal()">
+                            ➕ Novo Usuário
+                        </button>
+                    </div>
+
+                    <!-- Filtros e Busca -->
+                    <div class="admin-filters">
+                        <div class="search-box">
+                            <input type="text" id="userSearch" placeholder="Buscar usuário por nome ou email..." 
+                                   onkeyup="filterUsers()">
+                            <span class="search-icon">🔍</span>
+                        </div>
+                        <div class="filter-controls">
+                            <select id="roleFilter" onchange="filterUsers()">
+                                <option value="">Todos os roles</option>
+                                <option value="admin">Administradores</option>
+                                <option value="user">Usuários</option>
+                            </select>
+                            <select id="statusFilter" onchange="filterUsers()">
+                                <option value="">Todos os status</option>
+                                <option value="true">Ativos</option>
+                                <option value="false">Inativos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Lista de Usuários -->
+                    <div class="users-table-container">
+                        <table class="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Status</th>
+                                    <th>Criado em</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTableBody">
+                                <tr>
+                                    <td colspan="6" class="empty-state">Carregando usuários...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Estatísticas -->
+                    <div class="admin-stats">
+                        <div class="stat-card">
+                            <div class="stat-icon">👥</div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="totalUsers">0</span>
+                                <span class="stat-label">Total de Usuários</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">👑</div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="adminUsers">0</span>
+                                <span class="stat-label">Administradores</span>
+                            </div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-icon">✅</div>
+                            <div class="stat-info">
+                                <span class="stat-number" id="activeUsers">0</span>
+                                <span class="stat-label">Usuários Ativos</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </section>
         </div>
 
@@ -491,6 +574,70 @@
         </div>
     </div>
 
+    <!-- Modal: Criar/Editar Usuário -->
+    <div id="userModal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h2 id="userModalTitle">Novo Usuário</h2>
+            
+            <form id="userForm">
+                <input type="hidden" id="userId">
+                
+                <div class="form-group">
+                    <label for="userFullName">Nome Completo *</label>
+                    <input type="text" id="userFullName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="userEmail">Email *</label>
+                    <input type="email" id="userEmail" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="userPassword">Senha *</label>
+                    <input type="password" id="userPassword" required>
+                    <small>Mínimo 6 caracteres</small>
+                </div>
+                
+                <div class="form-group">
+                    <label for="userRole">Função *</label>
+                    <select id="userRole" required>
+                        <option value="user">Usuário</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>
+                        <input type="checkbox" id="userIsActive" checked>
+                        Usuário ativo
+                    </label>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="closeUserModal()">Cancelar</button>
+                    <button type="submit" class="btn btn-success">Salvar Usuário</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Confirmar Exclusão -->
+    <div id="deleteUserModal" class="modal">
+        <div class="modal-content modal-small">
+            <span class="close">&times;</span>
+            <h2>⚠️ Confirmar Exclusão</h2>
+            
+            <p>Tem certeza que deseja excluir o usuário <strong id="deleteUserName"></strong>?</p>
+            <p class="warning-text">Esta ação não pode ser desfeita!</p>
+            
+            <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteUserModal()">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteUser">Excluir</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Input oculto para upload de arquivos -->
     <input type="file" id="fileInput" style="display: none;" accept=".json,.csv,.xlsx">
 
@@ -500,6 +647,7 @@
     <script src="router.js"></script>
     <script src="auth-guard.js"></script>
     <script src="app.js"></script>
+    <script src="admin-panel.js"></script>
     
     <!-- Script de autenticação -->
     <script>
