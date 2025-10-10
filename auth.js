@@ -40,6 +40,14 @@ async function initAuth() {
 // Fazer login
 async function login(email, password) {
     try {
+        if (!supabaseClient) {
+            console.log('🔄 Supabase client não inicializado, tentando inicializar...');
+            const initialized = initSupabase();
+            if (!initialized) {
+                throw new Error('Falha ao inicializar Supabase client');
+            }
+        }
+
         const { data, error } = await supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
@@ -93,7 +101,11 @@ async function signUp(email, password, fullName) {
         console.log('🔄 Tentando registrar usuário:', email);
         
         if (!supabaseClient) {
-            throw new Error('Supabase client não inicializado');
+            console.log('🔄 Supabase client não inicializado, tentando inicializar...');
+            const initialized = initSupabase();
+            if (!initialized) {
+                throw new Error('Falha ao inicializar Supabase client');
+            }
         }
 
         const { data, error } = await supabaseClient.auth.signUp({

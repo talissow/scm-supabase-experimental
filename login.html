@@ -290,7 +290,12 @@
 
         // Verificar se já está logado
         document.addEventListener('DOMContentLoaded', async () => {
-            if (await auth.init()) {
+            // Inicializar Supabase primeiro
+            console.log('🔄 Inicializando Supabase...');
+            const supabaseInitialized = initSupabase();
+            console.log('Supabase inicializado:', supabaseInitialized);
+            
+            if (supabaseInitialized && await auth.init()) {
                 window.location.href = 'SCM_Supabase.html';
             }
         });
