@@ -1,0 +1,13 @@
+{
+  "rewrites": [
+    {
+      "source": "/",
+      "destination": "/login.html"
+    },
+    {
+      "source": "/((?!login\\.html|index\\.html|admin-interno\\.html|styles\\.css|app\\.js|db\\.js|auth\\.js|supabase-config\\.js|supabase-adapter\\.js|TESTE_.*\\.html|CRIAR_ADMIN\\.html).*)",
+      "destination": "/login.html"
+    }
+  ]
+}
+

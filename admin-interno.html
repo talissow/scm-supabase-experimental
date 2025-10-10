@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Interno - SCM</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📦</text></svg>">
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .admin-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .admin-header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 15px;
+        }
+        
+        .admin-header h1 {
+            margin: 0;
+            font-size: 2rem;
+        }
+        
+        .warning-box {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            color: #856404;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .form-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 10px;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn:hover {
+            opacity: 0.8;
+        }
+        
+        .users-list {
+            margin-top: 20px;
+        }
+        
+        .user-item {
+            background: white;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .user-info {
+            flex: 1;
+        }
+        
+        .user-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .status-badge {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+        
+        .status-active {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-inactive {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .role-admin {
+            background: #e2e3e5;
+            color: #383d41;
+        }
+        
+        .role-user {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
+    </style>
+</head>
+<body>
+    <div class="admin-container">
+        <div class="admin-header">
+            <h1>🔐 Admin Interno</h1>
+            <p>Gerenciamento de Usuários e Administradores</p>
+        </div>
+        
+        <div class="warning-box">
+            <strong>⚠️ ATENÇÃO:</strong> Esta página é para uso interno apenas. 
+            Use com cuidado para gerenciar usuários e administradores do sistema.
+        </div>
+        
+        <!-- Formulário para adicionar usuário -->
+        <div class="form-section">
+            <h3>➕ Adicionar Usuário/Admin</h3>
+            <form id="addUserForm">
+                <div class="form-group">
+                    <label for="userEmail">Email:</label>
+                    <input type="email" id="userEmail" required placeholder="usuario@exemplo.com">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userName">Nome Completo:</label>
+                    <input type="text" id="userName" required placeholder="Nome do usuário">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userPassword">Senha:</label>
+                    <input type="password" id="userPassword" required placeholder="Mínimo 6 caracteres">
+                </div>
+                
+                <div class="form-group">
+                    <label for="userRole">Função:</label>
+                    <select id="userRole" required>
+                        <option value="user">Usuário</option>
+                        <option value="admin">Administrador</option>
+                    </select>
+                </div>
+                
+                <button type="submit" class="btn btn-success">➕ Adicionar Usuário</button>
+            </form>
+        </div>
+        
+        <!-- Lista de usuários -->
+        <div class="users-list">
+            <h3>👥 Usuários Cadastrados</h3>
+            <div id="usersList">
+                <p>Carregando usuários...</p>
+            </div>
+        </div>
+        
+        <!-- Ações administrativas -->
+        <div class="form-section">
+            <h3>🔧 Ações Administrativas</h3>
+            <button onclick="refreshUsers()" class="btn btn-primary">🔄 Atualizar Lista</button>
+            <button onclick="exportUsers()" class="btn btn-primary">📥 Exportar Usuários</button>
+            <button onclick="clearAllData()" class="btn btn-danger">🗑️ Limpar Todos os Dados</button>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    <script src="auth.js"></script>
+    
+    <script>
+        let users = [];
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🔐 Admin Interno inicializado');
+            
+            // Verificar se Supabase está inicializado
+            if (typeof initSupabase === 'function') {
+                const initialized = initSupabase();
+                if (!initialized) {
+                    alert('❌ Erro ao inicializar Supabase. Verifique as configurações.');
+                    return;
+                }
+            }
+            
+            // Carregar usuários
+            await loadUsers();
+            
+            // Configurar formulário
+            document.getElementById('addUserForm').addEventListener('submit', handleAddUser);
+        });
+        
+        // Carregar usuários
+        async function loadUsers() {
+            try {
+                console.log('🔄 Carregando usuários...');
+                
+                const { data, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+                
+                if (error) throw error;
+                
+                users = data || [];
+                displayUsers();
+                
+                console.log(`✅ ${users.length} usuários carregados`);
+            } catch (error) {
+                console.error('❌ Erro ao carregar usuários:', error);
+                document.getElementById('usersList').innerHTML = 
+                    '<p style="color: red;">❌ Erro ao carregar usuários. Verifique o console.</p>';
+            }
+        }
+        
+        // Exibir usuários
+        function displayUsers() {
+            const container = document.getElementById('usersList');
+            
+            if (users.length === 0) {
+                container.innerHTML = '<p>Nenhum usuário encontrado.</p>';
+                return;
+            }
+            
+            const html = users.map(user => `
+                <div class="user-item">
+                    <div class="user-info">
+                        <strong>${user.full_name}</strong>
+                        <br>
+                        <small>${user.email}</small>
+                        <br>
+                        <span class="status-badge role-${user.role}">${user.role.toUpperCase()}</span>
+                        <span class="status-badge ${user.is_active ? 'status-active' : 'status-inactive'}">
+                            ${user.is_active ? 'ATIVO' : 'INATIVO'}
+                        </span>
+                    </div>
+                    <div class="user-actions">
+                        <button onclick="toggleUserStatus('${user.id}')" class="btn ${user.is_active ? 'btn-danger' : 'btn-success'}">
+                            ${user.is_active ? 'Desativar' : 'Ativar'}
+                        </button>
+                        <button onclick="resetUserPassword('${user.id}')" class="btn btn-primary">
+                            Resetar Senha
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+            
+            container.innerHTML = html;
+        }
+        
+        // Adicionar usuário
+        async function handleAddUser(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('userEmail').value;
+            const fullName = document.getElementById('userName').value;
+            const password = document.getElementById('userPassword').value;
+            const role = document.getElementById('userRole').value;
+            
+            try {
+                console.log('🔄 Adicionando usuário:', email);
+                
+                // Criar usuário no Supabase Auth
+                const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
+                    email: email,
+                    password: password,
+                    email_confirm: true
+                });
+                
+                if (authError) throw authError;
+                
+                // Criar perfil na tabela users
+                const { error: profileError } = await supabaseClient
+                    .from('users')
+                    .insert({
+                        id: authData.user.id,
+                        email: email,
+                        full_name: fullName,
+                        role: role,
+                        is_active: true
+                    });
+                
+                if (profileError) throw profileError;
+                
+                alert('✅ Usuário adicionado com sucesso!');
+                
+                // Limpar formulário
+                document.getElementById('addUserForm').reset();
+                
+                // Recarregar lista
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('❌ Erro ao adicionar usuário:', error);
+                alert('❌ Erro ao adicionar usuário: ' + error.message);
+            }
+        }
+        
+        // Alternar status do usuário
+        async function toggleUserStatus(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+            
+            const newStatus = !user.is_active;
+            const action = newStatus ? 'ativar' : 'desativar';
+            
+            if (!confirm(`Tem certeza que deseja ${action} o usuário ${user.full_name}?`)) {
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient
+                    .from('users')
+                    .update({ is_active: newStatus })
+                    .eq('id', userId);
+                
+                if (error) throw error;
+                
+                alert(`✅ Usuário ${action}do com sucesso!`);
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('❌ Erro ao alterar status:', error);
+                alert('❌ Erro ao alterar status: ' + error.message);
+            }
+        }
+        
+        // Resetar senha do usuário
+        async function resetUserPassword(userId) {
+            const user = users.find(u => u.id === userId);
+            if (!user) return;
+            
+            const newPassword = prompt(`Digite a nova senha para ${user.full_name}:`);
+            if (!newPassword || newPassword.length < 6) {
+                alert('❌ Senha deve ter pelo menos 6 caracteres');
+                return;
+            }
+            
+            try {
+                const { error } = await supabaseClient.auth.admin.updateUserById(userId, {
+                    password: newPassword
+                });
+                
+                if (error) throw error;
+                
+                alert('✅ Senha resetada com sucesso!');
+                
+            } catch (error) {
+                console.error('❌ Erro ao resetar senha:', error);
+                alert('❌ Erro ao resetar senha: ' + error.message);
+            }
+        }
+        
+        // Atualizar lista
+        async function refreshUsers() {
+            await loadUsers();
+        }
+        
+        // Exportar usuários
+        function exportUsers() {
+            const csv = [
+                ['Email', 'Nome', 'Função', 'Status', 'Criado em'],
+                ...users.map(user => [
+                    user.email,
+                    user.full_name,
+                    user.role,
+                    user.is_active ? 'Ativo' : 'Inativo',
+                    new Date(user.created_at).toLocaleDateString('pt-BR')
+                ])
+            ].map(row => row.join(',')).join('\n');
+            
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'usuarios_scm.csv';
+            a.click();
+            window.URL.revokeObjectURL(url);
+        }
+        
+        // Limpar todos os dados (CUIDADO!)
+        async function clearAllData() {
+            if (!confirm('⚠️ ATENÇÃO: Isso irá excluir TODOS os dados do sistema!\n\nTem certeza que deseja continuar?')) {
+                return;
+            }
+            
+            if (!confirm('⚠️ ÚLTIMA CONFIRMAÇÃO: Todos os produtos, movimentações e usuários serão excluídos!\n\nContinuar?')) {
+                return;
+            }
+            
+            try {
+                console.log('🗑️ Limpando todos os dados...');
+                
+                // Excluir movimentações
+                await supabaseClient.from('movements').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                
+                // Excluir produtos
+                await supabaseClient.from('products').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                
+                // Excluir tipos customizados
+                await supabaseClient.from('custom_types').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+                
+                // Excluir usuários (exceto o atual)
+                const currentUser = await supabaseClient.auth.getUser();
+                if (currentUser.data.user) {
+                    await supabaseClient.from('users').delete().neq('id', currentUser.data.user.id);
+                }
+                
+                alert('✅ Todos os dados foram limpos!');
+                await loadUsers();
+                
+            } catch (error) {
+                console.error('❌ Erro ao limpar dados:', error);
+                alert('❌ Erro ao limpar dados: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html>

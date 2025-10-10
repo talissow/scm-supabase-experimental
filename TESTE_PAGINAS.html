@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Páginas - SCM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-card {
+            background: white;
+            padding: 20px;
+            margin: 10px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-link {
+            display: inline-block;
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 5px;
+        }
+        .test-link:hover {
+            background: #0056b3;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .warning { background: #fff3cd; color: #856404; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Teste de Páginas - SCM</h1>
+    
+    <div class="test-card">
+        <h2>📋 Páginas do Sistema</h2>
+        <p>Clique nos links abaixo para testar se as páginas estão funcionando:</p>
+        
+        <h3>🔐 Autenticação</h3>
+        <a href="/login.html" class="test-link" target="_blank">Login</a>
+        <a href="/CRIAR_ADMIN.html" class="test-link" target="_blank">Criar Admin</a>
+        
+        <h3>📦 Sistema Principal</h3>
+        <a href="/SCM_Supabase.html" class="test-link" target="_blank">SCM Principal</a>
+        
+        <h3>👥 Gerenciamento</h3>
+        <a href="/usuarios.html" class="test-link" target="_blank">Usuários</a>
+        
+        <h3>🧪 Testes</h3>
+        <a href="/TESTE_CONEXAO.html" class="test-link" target="_blank">Teste Conexão</a>
+        <a href="/TESTE_CONFIG_SUPABASE.html" class="test-link" target="_blank">Teste Config</a>
+        <a href="/TESTE_SIMPLES.html" class="test-link" target="_blank">Teste Simples</a>
+    </div>
+    
+    <div class="test-card">
+        <h2>📊 Status das Páginas</h2>
+        <div id="status-results">
+            <p>Clique em "Testar Todas" para verificar o status de cada página.</p>
+        </div>
+        <button onclick="testAllPages()" class="test-link">Testar Todas as Páginas</button>
+    </div>
+    
+    <div class="test-card">
+        <h2>🔧 Informações Técnicas</h2>
+        <p><strong>URL Base:</strong> <span id="base-url"></span></p>
+        <p><strong>User Agent:</strong> <span id="user-agent"></span></p>
+        <p><strong>Timestamp:</strong> <span id="timestamp"></span></p>
+    </div>
+
+    <script>
+        // Mostrar informações técnicas
+        document.getElementById('base-url').textContent = window.location.origin;
+        document.getElementById('user-agent').textContent = navigator.userAgent;
+        document.getElementById('timestamp').textContent = new Date().toLocaleString('pt-BR');
+        
+        // Lista de páginas para testar
+        const pages = [
+            { name: 'Login', url: '/login.html' },
+            { name: 'Criar Admin', url: '/CRIAR_ADMIN.html' },
+            { name: 'SCM Principal', url: '/SCM_Supabase.html' },
+            { name: 'Usuários', url: '/usuarios.html' },
+            { name: 'Teste Conexão', url: '/TESTE_CONEXAO.html' },
+            { name: 'Teste Config', url: '/TESTE_CONFIG_SUPABASE.html' },
+            { name: 'Teste Simples', url: '/TESTE_SIMPLES.html' }
+        ];
+        
+        async function testAllPages() {
+            const resultsDiv = document.getElementById('status-results');
+            resultsDiv.innerHTML = '<p>🔄 Testando páginas...</p>';
+            
+            let results = '';
+            
+            for (const page of pages) {
+                try {
+                    const response = await fetch(page.url, { method: 'HEAD' });
+                    const status = response.ok ? 'success' : 'error';
+                    const statusText = response.ok ? '✅ OK' : `❌ Erro ${response.status}`;
+                    
+                    results += `<div class="status ${status}">${page.name}: ${statusText}</div>`;
+                } catch (error) {
+                    results += `<div class="status error">${page.name}: ❌ Erro de rede</div>`;
+                }
+            }
+            
+            resultsDiv.innerHTML = results;
+        }
+    </script>
+</body>
+</html>

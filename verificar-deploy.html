@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verificar Deploy - SCM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-card {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+        .status-success {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+        .status-error {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        .status-warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        .status-info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        .btn {
+            padding: 10px 20px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .url-test {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 5px;
+        }
+        .url-test a {
+            color: #007bff;
+            text-decoration: none;
+        }
+        .url-test a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Verificar Deploy - SCM</h1>
+        
+        <div class="status-card status-info">
+            <h3>📋 Informações do Projeto</h3>
+            <p><strong>ID do Projeto:</strong> prj_tO6ISOlyLOzgctoTTY02opsnzDfz</p>
+            <p><strong>URL:</strong> https://scm-supabase.vercel.app</p>
+            <p><strong>Status:</strong> <span id="projectStatus">Verificando...</span></p>
+        </div>
+        
+        <div class="status-card status-info">
+            <h3>🧪 Testes de URL</h3>
+            <p>Clique nos links abaixo para testar se as páginas estão funcionando corretamente:</p>
+            
+            <div class="url-test">
+                <strong>1. Login (Deve estar limpo):</strong><br>
+                <a href="https://scm-supabase.vercel.app/login.html" target="_blank">
+                    https://scm-supabase.vercel.app/login.html
+                </a>
+                <br><small>✅ Deve mostrar SEM link "Criar Administrador"</small>
+            </div>
+            
+            <div class="url-test">
+                <strong>2. Admin Interno (Novo):</strong><br>
+                <a href="https://scm-supabase.vercel.app/admin-interno.html" target="_blank">
+                    https://scm-supabase.vercel.app/admin-interno.html
+                </a>
+                <br><small>✅ Deve carregar sem login</small>
+            </div>
+            
+            <div class="url-test">
+                <strong>3. Sistema Principal (Protegido):</strong><br>
+                <a href="https://scm-supabase.vercel.app/SCM_Supabase.html" target="_blank">
+                    https://scm-supabase.vercel.app/SCM_Supabase.html
+                </a>
+                <br><small>✅ Deve redirecionar para login se não autenticado</small>
+            </div>
+            
+            <div class="url-test">
+                <strong>4. Raiz (Deve redirecionar):</strong><br>
+                <a href="https://scm-supabase.vercel.app/" target="_blank">
+                    https://scm-supabase.vercel.app/
+                </a>
+                <br><small>✅ Deve redirecionar para login.html</small>
+            </div>
+        </div>
+        
+        <div class="status-card status-warning">
+            <h3>⚠️ Verificações Importantes</h3>
+            <ul>
+                <li>✅ <strong>Login limpo:</strong> Não deve ter link "Criar Administrador"</li>
+                <li>✅ <strong>Admin interno:</strong> Deve carregar sem login</li>
+                <li>✅ <strong>Proteção:</strong> Páginas protegidas devem redirecionar</li>
+                <li>✅ <strong>Redirecionamento:</strong> Raiz deve ir para login</li>
+            </ul>
+        </div>
+        
+        <div class="status-card status-info">
+            <h3>🔧 Ações Disponíveis</h3>
+            <button onclick="checkAllUrls()" class="btn">🔍 Verificar Todas as URLs</button>
+            <button onclick="openVercelDashboard()" class="btn">📊 Abrir Vercel Dashboard</button>
+            <button onclick="refreshPage()" class="btn">🔄 Atualizar Página</button>
+        </div>
+        
+        <div id="testResults" class="status-card" style="display: none;">
+            <h3>📊 Resultados dos Testes</h3>
+            <div id="resultsContent"></div>
+        </div>
+    </div>
+
+    <script>
+        // Verificar status do projeto
+        async function checkProjectStatus() {
+            try {
+                // Tentar acessar a URL principal
+                const response = await fetch('https://scm-supabase.vercel.app/', {
+                    method: 'HEAD',
+                    mode: 'no-cors'
+                });
+                
+                document.getElementById('projectStatus').innerHTML = '✅ Online';
+                document.getElementById('projectStatus').parentElement.className = 'status-card status-success';
+            } catch (error) {
+                document.getElementById('projectStatus').innerHTML = '❌ Offline ou com erro';
+                document.getElementById('projectStatus').parentElement.className = 'status-card status-error';
+            }
+        }
+        
+        // Verificar todas as URLs
+        async function checkAllUrls() {
+            const resultsDiv = document.getElementById('testResults');
+            const contentDiv = document.getElementById('resultsContent');
+            
+            resultsDiv.style.display = 'block';
+            contentDiv.innerHTML = '<p>🔄 Verificando URLs...</p>';
+            
+            const urls = [
+                { name: 'Login', url: 'https://scm-supabase.vercel.app/login.html' },
+                { name: 'Admin Interno', url: 'https://scm-supabase.vercel.app/admin-interno.html' },
+                { name: 'Sistema Principal', url: 'https://scm-supabase.vercel.app/SCM_Supabase.html' },
+                { name: 'Raiz', url: 'https://scm-supabase.vercel.app/' }
+            ];
+            
+            let results = '';
+            
+            for (const urlInfo of urls) {
+                try {
+                    const response = await fetch(urlInfo.url, { 
+                        method: 'HEAD',
+                        mode: 'no-cors'
+                    });
+                    
+                    results += `<div class="status-card status-success">
+                        ✅ <strong>${urlInfo.name}:</strong> Acessível
+                    </div>`;
+                } catch (error) {
+                    results += `<div class="status-card status-error">
+                        ❌ <strong>${urlInfo.name}:</strong> Erro de acesso
+                    </div>`;
+                }
+            }
+            
+            contentDiv.innerHTML = results;
+        }
+        
+        // Abrir dashboard do Vercel
+        function openVercelDashboard() {
+            window.open('https://vercel.com/dashboard/prj_tO6ISOlyLOzgctoTTY02opsnzDfz', '_blank');
+        }
+        
+        // Atualizar página
+        function refreshPage() {
+            location.reload();
+        }
+        
+        // Inicializar
+        document.addEventListener('DOMContentLoaded', () => {
+            checkProjectStatus();
+        });
+    </script>
+</body>
+</html>
