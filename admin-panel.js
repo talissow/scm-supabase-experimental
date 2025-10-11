@@ -1,13 +1,16 @@
-// ===== PAINEL DE ADMINISTRAÇÃO =====
+// ===== PAINEL DE ADMINISTRAÇÃO SIMPLIFICADO =====
+// Apenas admin@scm.local tem acesso de administrador
 
 // Verificar se usuário é admin e mostrar elementos
 async function checkAdminAccess() {
     try {
         console.log('🔍 Verificando acesso de admin...');
         
-        if (typeof auth !== 'undefined' && typeof auth.isUserAdmin === 'function') {
-            const isAdmin = await auth.isUserAdmin();
-            console.log('🧪 Resultado isUserAdmin():', isAdmin);
+        if (typeof auth !== 'undefined' && typeof auth.getUserProfile === 'function') {
+            const userProfile = await auth.getUserProfile();
+            // Apenas admin@scm.local é admin
+            const isAdmin = userProfile && userProfile.email === 'admin@scm.local' && userProfile.role === 'admin';
+            console.log('🧪 Verificando admin:', userProfile?.email, 'é admin:', isAdmin);
             
             if (isAdmin) {
                 // Mostrar botão admin no header
@@ -24,41 +27,17 @@ async function checkAdminAccess() {
                     console.log('✅ Aba admin exibida');
                 }
                 
-                console.log('✅ Acesso de administrador concedido');
+                console.log('✅ Acesso de administrador concedido para admin@scm.local');
             } else {
-                console.log('ℹ️ Usuário não é administrador');
-                
-                // Diagnóstico adicional
-                const { data: { session } } = await supabaseClient.auth.getSession();
-                if (session) {
-                    console.log('🔍 Dados da sessão:', {
-                        userId: session.user.id,
-                        email: session.user.email
-                    });
-                    
-                    // Verificar se existe na tabela users
-                    const { data: userData, error } = await supabaseClient
-                        .from('users')
-                        .select('*')
-                        .eq('id', session.user.id)
-                        .single();
-                    
-                    if (error) {
-                        console.log('❌ Usuário não encontrado na tabela users:', error.message);
-                        console.log('💡 Execute: fixAdminUser() no console para corrigir');
-                    } else {
-                        console.log('👤 Dados do usuário na tabela:', userData);
-                        if (userData.role !== 'admin') {
-                            console.log('💡 Role atual:', userData.role, '- Execute: fixAdminUser() para corrigir');
-                        }
-                    }
-                }
+                console.log('❌ Acesso negado - apenas admin@scm.local tem acesso de administrador');
+                console.log('👤 Email atual:', userProfile?.email);
+                console.log('💡 Use a conta admin padrão: admin@scm.local / admin123456');
             }
         } else {
-            console.error('❌ Função auth.isUserAdmin não disponível');
+            console.error('❌ Módulo de autenticação não disponível');
         }
     } catch (error) {
-        console.error('❌ Erro ao verificar acesso de admin:', error);
+        console.error('❌ Erro ao verificar acesso admin:', error);
     }
 }
 
@@ -72,309 +51,120 @@ async function loadUsers() {
 
         if (error) {
             console.error('❌ Erro ao carregar usuários:', error);
-            showToast('Erro ao carregar usuários', 'error');
             return;
         }
 
-        renderUsersTable(users || []);
-        updateAdminStats(users || []);
+        renderUsersTable(users);
+        updateAdminStats(users);
     } catch (error) {
         console.error('❌ Erro inesperado ao carregar usuários:', error);
-        showToast('Erro inesperado ao carregar usuários', 'error');
     }
 }
 
 // Renderizar tabela de usuários
 function renderUsersTable(users) {
-    const tbody = document.getElementById('usersTableBody');
-    
-    if (!users || users.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="6" class="empty-state">Nenhum usuário cadastrado.</td></tr>';
-        return;
-    }
+    const tbody = document.querySelector('#usersTable tbody');
+    if (!tbody) return;
 
-    tbody.innerHTML = users.map(user => `
-        <tr>
-            <td>${user.full_name}</td>
+    tbody.innerHTML = '';
+
+    users.forEach(user => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
             <td>${user.email}</td>
-            <td><span class="role-badge role-${user.role}">${user.role}</span></td>
-            <td><span class="status-badge status-${user.is_active ? 'active' : 'inactive'}">${user.is_active ? 'Ativo' : 'Inativo'}</span></td>
+            <td>${user.full_name || 'N/A'}</td>
+            <td><span class="role-badge ${user.role}">${user.role}</span></td>
+            <td><span class="status-badge ${user.is_active ? 'active' : 'inactive'}">${user.is_active ? 'Ativo' : 'Inativo'}</span></td>
             <td>${new Date(user.created_at).toLocaleDateString('pt-BR')}</td>
             <td>
                 <div class="user-actions-btns">
-                    <button class="btn-sm btn-edit" onclick="editUser('${user.id}')" title="Editar usuário">
-                        ✏️
-                    </button>
-                    <button class="btn-sm btn-delete" onclick="deleteUser('${user.id}', '${user.full_name}')" title="Excluir usuário">
-                        🗑️
-                    </button>
+                    <button onclick="editUser('${user.id}')" class="btn btn-sm btn-primary">✏️ Editar</button>
+                    <button onclick="deleteUser('${user.id}')" class="btn btn-sm btn-danger">🗑️ Excluir</button>
                 </div>
             </td>
-        </tr>
-    `).join('');
+        `;
+        tbody.appendChild(row);
+    });
 }
 
-// Atualizar estatísticas de admin
+// Atualizar estatísticas do admin
 function updateAdminStats(users) {
     const totalUsers = users.length;
-    const adminUsers = users.filter(u => u.role === 'admin').length;
     const activeUsers = users.filter(u => u.is_active).length;
+    const adminUsers = users.filter(u => u.role === 'admin').length;
 
     document.getElementById('totalUsers').textContent = totalUsers;
-    document.getElementById('adminUsers').textContent = adminUsers;
     document.getElementById('activeUsers').textContent = activeUsers;
+    document.getElementById('adminUsers').textContent = adminUsers;
 }
 
-// Filtrar usuários
-function filterUsers() {
-    const searchTerm = document.getElementById('userSearch').value.toLowerCase();
-    const roleFilter = document.getElementById('roleFilter').value;
-    const statusFilter = document.getElementById('statusFilter').value;
+// Mostrar modal de criar/editar usuário
+function showCreateUserModal(userId = null) {
+    const modal = document.getElementById('userModal');
+    const modalTitle = document.getElementById('userModalTitle');
+    const form = document.getElementById('userForm');
 
-    // Implementar filtro (simplificado por enquanto)
-    loadUsers(); // Recarregar todos os usuários
+    if (userId) {
+        modalTitle.textContent = '✏️ Editar Usuário';
+        // Preencher formulário com dados do usuário
+        // Implementar busca de dados do usuário
+    } else {
+        modalTitle.textContent = '➕ Novo Usuário';
+        form.reset();
+    }
+
+    modal.style.display = 'block';
 }
 
-// Mostrar modal de criação de usuário
-function showCreateUserModal() {
-    document.getElementById('userModalTitle').textContent = 'Novo Usuário';
-    document.getElementById('userForm').reset();
-    document.getElementById('userId').value = '';
-    document.getElementById('userPassword').required = true;
-    document.getElementById('userModal').style.display = 'block';
+// Lidar com envio do formulário de usuário
+async function handleUserSubmit(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(e.target);
+    const userData = {
+        email: formData.get('email'),
+        full_name: formData.get('full_name'),
+        role: formData.get('role'),
+        is_active: formData.get('is_active') === 'on'
+    };
+
+    try {
+        // Implementar criação/atualização de usuário
+        console.log('Dados do usuário:', userData);
+        
+        // Fechar modal
+        closeUserModal();
+        
+        // Recarregar lista
+        loadUsers();
+    } catch (error) {
+        console.error('Erro ao salvar usuário:', error);
+    }
 }
 
 // Editar usuário
 function editUser(userId) {
-    // Implementar edição de usuário
-    showToast('Funcionalidade de edição será implementada', 'info');
+    showCreateUserModal(userId);
 }
 
 // Excluir usuário
-function deleteUser(userId, userName) {
-    document.getElementById('deleteUserName').textContent = userName;
-    document.getElementById('confirmDeleteUser').onclick = () => confirmDeleteUser(userId);
-    document.getElementById('deleteUserModal').style.display = 'block';
+function deleteUser(userId) {
+    const modal = document.getElementById('deleteUserModal');
+    modal.style.display = 'block';
+    
+    // Armazenar ID para exclusão
+    modal.dataset.userId = userId;
 }
 
-// Confirmar exclusão de usuário
-async function confirmDeleteUser(userId) {
-    try {
-        const { error } = await supabaseClient
-            .from('users')
-            .delete()
-            .eq('id', userId);
-
-        if (error) {
-            console.error('❌ Erro ao excluir usuário:', error);
-            showToast('Erro ao excluir usuário', 'error');
-            return;
-        }
-
-        closeDeleteUserModal();
-        loadUsers();
-        showToast('Usuário excluído com sucesso', 'success');
-    } catch (error) {
-        console.error('❌ Erro inesperado ao excluir usuário:', error);
-        showToast('Erro inesperado ao excluir usuário', 'error');
-    }
-}
-
-// Fechar modais
+// Fechar modal de usuário
 function closeUserModal() {
     document.getElementById('userModal').style.display = 'none';
 }
 
+// Fechar modal de confirmação de exclusão
 function closeDeleteUserModal() {
     document.getElementById('deleteUserModal').style.display = 'none';
 }
 
-// Função para corrigir usuário admin (disponível globalmente)
-async function fixAdminUser() {
-    console.log('🔧 Iniciando correção do usuário admin...');
-    
-    try {
-        const { data: { session } } = await supabaseClient.auth.getSession();
-        
-        if (!session) {
-            console.error('❌ Nenhuma sessão ativa');
-            return;
-        }
-        
-        console.log('👤 Dados da sessão:', {
-            userId: session.user.id,
-            email: session.user.email,
-            name: session.user.user_metadata?.full_name
-        });
-        
-        // Verificar se já existe na tabela users
-        const { data: existingUser } = await supabaseClient
-            .from('users')
-            .select('*')
-            .eq('email', session.user.email)
-            .single();
-        
-        if (existingUser) {
-            console.log('📝 Usuário existe, atualizando...');
-            // Atualizar usuário existente
-            const { error: updateError } = await supabaseClient
-                .from('users')
-                .update({
-                    id: session.user.id,
-                    full_name: session.user.user_metadata?.full_name || 'Talisson Sousa de Santana',
-                    role: 'admin',
-                    is_active: true
-                })
-                .eq('email', session.user.email);
-            
-            if (updateError) {
-                console.error('❌ Erro ao atualizar usuário:', updateError);
-                return;
-            }
-            
-            console.log('✅ Usuário atualizado com sucesso!');
-        } else {
-            console.log('➕ Usuário não existe, criando...');
-            // Criar novo usuário
-            const { error: insertError } = await supabaseClient
-                .from('users')
-                .insert({
-                    id: session.user.id,
-                    email: session.user.email,
-                    full_name: session.user.user_metadata?.full_name || 'Talisson Sousa de Santana',
-                    role: 'admin',
-                    is_active: true
-                });
-            
-            if (insertError) {
-                console.error('❌ Erro ao criar usuário:', insertError);
-                return;
-            }
-            
-            console.log('✅ Usuário criado com sucesso!');
-        }
-        
-        // Recarregar página para aplicar mudanças
-        console.log('🔄 Recarregando página em 3 segundos...');
-        setTimeout(() => {
-            window.location.reload();
-        }, 3000);
-        
-    } catch (error) {
-        console.error('❌ Erro inesperado na correção:', error);
-    }
-}
-
-// Tornar função disponível globalmente
-window.fixAdminUser = fixAdminUser;
-
-// Event listeners para admin
-document.addEventListener('DOMContentLoaded', () => {
-    // Verificar acesso de admin
-    setTimeout(() => {
-        checkAdminAccess();
-    }, 1000);
-
-    // Formulário de usuário
-    const userForm = document.getElementById('userForm');
-    if (userForm) {
-        userForm.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            
-            const formData = new FormData(userForm);
-            const userId = document.getElementById('userId').value;
-            const isEdit = userId !== '';
-            
-            try {
-                if (isEdit) {
-                    // Implementar edição
-                    showToast('Funcionalidade de edição será implementada', 'info');
-                } else {
-                    // Criar novo usuário
-                    const userData = {
-                        full_name: document.getElementById('userFullName').value,
-                        email: document.getElementById('userEmail').value,
-                        role: document.getElementById('userRole').value,
-                        is_active: document.getElementById('userIsActive').checked
-                    };
-                    
-                    // Criar usuário no Supabase Auth
-                    const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
-                        email: userData.email,
-                        password: document.getElementById('userPassword').value,
-                        email_confirm: true
-                    });
-                    
-                    if (authError) {
-                        console.error('❌ Erro ao criar usuário no auth:', authError);
-                        showToast('Erro ao criar usuário: ' + authError.message, 'error');
-                        return;
-                    }
-                    
-                    // Criar perfil na tabela users
-                    const { error: profileError } = await supabaseClient
-                        .from('users')
-                        .insert({
-                            id: authData.user.id,
-                            email: userData.email,
-                            full_name: userData.full_name,
-                            role: userData.role,
-                            is_active: userData.is_active
-                        });
-                    
-                    if (profileError) {
-                        console.error('❌ Erro ao criar perfil:', profileError);
-                        showToast('Erro ao criar perfil do usuário', 'error');
-                        return;
-                    }
-                    
-                    closeUserModal();
-                    loadUsers();
-                    showToast('Usuário criado com sucesso', 'success');
-                }
-            } catch (error) {
-                console.error('❌ Erro inesperado:', error);
-                showToast('Erro inesperado ao salvar usuário', 'error');
-            }
-        });
-    }
-
-    // Event listeners para botão admin
-    const adminButton = document.getElementById('adminButton');
-    if (adminButton) {
-        adminButton.addEventListener('click', () => {
-            switchTab('admin');
-        });
-    }
-
-    // Fechar modais ao clicar no X
-    const closeButtons = document.querySelectorAll('.close');
-    closeButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            const modal = e.target.closest('.modal');
-            if (modal) {
-                modal.style.display = 'none';
-            }
-        });
-    });
-
-    // Fechar modais ao clicar fora
-    window.addEventListener('click', (e) => {
-        if (e.target.classList.contains('modal')) {
-            e.target.style.display = 'none';
-        }
-    });
-});
-
-// Atualizar switchTab para incluir admin
-const originalSwitchTab = window.switchTab;
-window.switchTab = function(tabName) {
-    if (originalSwitchTab) {
-        originalSwitchTab(tabName);
-    }
-    
-    if (tabName === 'admin') {
-        document.getElementById('adminTab').classList.add('active');
-        loadUsers();
-    }
-};
+// Sistema simplificado - apenas admin@scm.local é admin
+console.log('ℹ️ Sistema simplificado: apenas admin@scm.local tem acesso de administrador');

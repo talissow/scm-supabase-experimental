@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Criar Admin Padrão - SCM</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+        h1 { text-align: center; color: #333; margin-bottom: 30px; }
+        .admin-info {
+            background: #e8f5e8;
+            border-left: 4px solid #28a745;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 0;
+            width: 100%;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545 0%, #c82333 100%);
+        }
+        .result {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+        }
+        .error { background: #f8d7da; border-left: 4px solid #dc3545; }
+        .success { background: #d4edda; border-left: 4px solid #28a745; }
+        .warning { background: #fff3cd; border-left: 4px solid #ffc107; }
+        .credentials {
+            background: #e3f2fd;
+            border: 2px solid #2196f3;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .credentials h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+        .credentials .email {
+            font-size: 18px;
+            font-weight: bold;
+            color: #333;
+        }
+        .credentials .password {
+            font-size: 16px;
+            color: #666;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👑 Criar Admin Padrão - SCM</h1>
+        
+        <div class="admin-info">
+            <h3>📋 Conta Admin Padrão</h3>
+            <p>Esta ferramenta criará uma conta de administrador padrão única para o sistema.</p>
+        </div>
+
+        <div class="credentials">
+            <h3>🔑 Credenciais do Admin Padrão</h3>
+            <div class="email">admin@scm.local</div>
+            <div class="password">admin123456</div>
+            <p><small>⚠️ Altere a senha após o primeiro login!</small></p>
+        </div>
+
+        <button class="btn" onclick="criarAdminPadrao()">
+            🚀 Criar Admin Padrão
+        </button>
+
+        <button class="btn btn-danger" onclick="limparTodosAdmins()">
+            🗑️ Limpar Todos os Admins
+        </button>
+
+        <button class="btn" onclick="verificarAdmins()">
+            📊 Verificar Admins Existentes
+        </button>
+
+        <div id="results" class="result" style="display: none;"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    
+    <script>
+        const supabaseUrl = 'https://kaqkzrngebxfuvquromi.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthcWt6cm5nZWJ4ZnV2cXVyb21pIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDAzNDkwNCwiZXhwIjoyMDc1NjEwOTA0fQ.Ce_3TCj5YCDeWzqr3LY_aovit1-DH0Qx61FA7ESqh7g';
+        
+        const supabaseClient = supabase.createClient(supabaseUrl, supabaseKey);
+
+        async function criarAdminPadrao() {
+            const resultDiv = document.getElementById('results');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.textContent = '🔄 Criando admin padrão...';
+            
+            try {
+                // 1. Criar usuário no Supabase Auth
+                const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
+                    email: 'admin@scm.local',
+                    password: 'admin123456',
+                    email_confirm: true,
+                    user_metadata: {
+                        full_name: 'Administrador do Sistema'
+                    }
+                });
+
+                if (authError) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Erro ao criar usuário no Auth: ${authError.message}`;
+                    return;
+                }
+
+                const userId = authData.user.id;
+                console.log('✅ Usuário criado no Auth:', userId);
+
+                // 2. Criar registro na tabela users
+                const { data: userData, error: userError } = await supabaseClient
+                    .from('users')
+                    .insert({
+                        id: userId,
+                        email: 'admin@scm.local',
+                        full_name: 'Administrador do Sistema',
+                        role: 'admin',
+                        is_active: true
+                    })
+                    .select()
+                    .single();
+
+                if (userError) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Erro ao criar registro na tabela users: ${userError.message}`;
+                    return;
+                }
+
+                // Sucesso!
+                let result = `✅ ADMIN PADRÃO CRIADO COM SUCESSO!\n\n`;
+                result += `📧 Email: admin@scm.local\n`;
+                result += `🔑 Senha: admin123456\n`;
+                result += `👤 Nome: Administrador do Sistema\n`;
+                result += `👑 Role: admin\n`;
+                result += `🆔 ID: ${userId}\n\n`;
+                result += `🎯 PRÓXIMOS PASSOS:\n`;
+                result += `1. Faça login com as credenciais acima\n`;
+                result += `2. Altere a senha padrão\n`;
+                result += `3. Remova outros admins se necessário\n`;
+                result += `4. Configure o sistema conforme necessário\n\n`;
+                result += `⚠️ IMPORTANTE: Esta é a única conta admin do sistema!`;
+
+                resultDiv.className = 'result success';
+                resultDiv.textContent = result;
+
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Erro inesperado: ${error.message}`;
+            }
+        }
+
+        async function limparTodosAdmins() {
+            if (!confirm('⚠️ ATENÇÃO: Isso removerá TODOS os usuários admin existentes!\n\nTem certeza que deseja continuar?')) {
+                return;
+            }
+
+            const resultDiv = document.getElementById('results');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.textContent = '🔄 Limpando admins existentes...';
+            
+            try {
+                // Buscar todos os admins
+                const { data: admins, error: fetchError } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('role', 'admin');
+
+                if (fetchError) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Erro ao buscar admins: ${fetchError.message}`;
+                    return;
+                }
+
+                let result = `🗑️ LIMPEZA DE ADMINS:\n\n`;
+                result += `📊 Encontrados ${admins.length} admins:\n\n`;
+
+                // Converter todos para usuários normais
+                for (const admin of admins) {
+                    const { error: updateError } = await supabaseClient
+                        .from('users')
+                        .update({ role: 'user' })
+                        .eq('id', admin.id);
+
+                    if (updateError) {
+                        result += `❌ Erro ao alterar ${admin.email}: ${updateError.message}\n`;
+                    } else {
+                        result += `✅ ${admin.email} → role: user\n`;
+                    }
+                }
+
+                result += `\n🎯 RESULTADO: Todos os admins foram convertidos para usuários normais.`;
+                result += `\n💡 Agora você pode criar o admin padrão!`;
+
+                resultDiv.className = 'result warning';
+                resultDiv.textContent = result;
+
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Erro inesperado: ${error.message}`;
+            }
+        }
+
+        async function verificarAdmins() {
+            const resultDiv = document.getElementById('results');
+            resultDiv.style.display = 'block';
+            resultDiv.className = 'result';
+            resultDiv.textContent = '🔄 Verificando admins...';
+            
+            try {
+                const { data: admins, error } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('role', 'admin')
+                    .order('created_at', { ascending: false });
+
+                if (error) {
+                    resultDiv.className = 'result error';
+                    resultDiv.textContent = `❌ Erro ao buscar admins: ${error.message}`;
+                    return;
+                }
+
+                let result = `📊 ADMINS EXISTENTES (${admins.length}):\n\n`;
+
+                if (admins.length === 0) {
+                    result += `✅ Nenhum admin encontrado. Sistema limpo!`;
+                    resultDiv.className = 'result success';
+                } else {
+                    admins.forEach((admin, index) => {
+                        result += `${index + 1}. 📧 ${admin.email}\n`;
+                        result += `   👤 Nome: ${admin.full_name || 'N/A'}\n`;
+                        result += `   👑 Role: ${admin.role}\n`;
+                        result += `   ✅ Ativo: ${admin.is_active ? 'Sim' : 'Não'}\n`;
+                        result += `   📅 Criado: ${admin.created_at ? new Date(admin.created_at).toLocaleString('pt-BR') : 'N/A'}\n\n`;
+                    });
+
+                    result += `💡 Use "Limpar Todos os Admins" para remover estes usuários admin.`;
+                    resultDiv.className = 'result warning';
+                }
+
+                resultDiv.textContent = result;
+
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.textContent = `❌ Erro inesperado: ${error.message}`;
+            }
+        }
+    </script>
+</body>
+</html>
