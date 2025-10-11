@@ -20,12 +20,22 @@ async function checkAdminAccess() {
                     console.log('✅ Botão admin exibido');
                 }
                 
+                // Mostrar botão gerenciar usuários
+                const manageUsersButton = document.getElementById('manageUsersButton');
+                if (manageUsersButton) {
+                    manageUsersButton.style.display = 'inline-block';
+                    console.log('✅ Botão gerenciar usuários exibido');
+                }
+                
                 // Mostrar aba admin
                 const adminTab = document.querySelector('[data-tab="admin"]');
                 if (adminTab) {
                     adminTab.style.display = 'block';
                     console.log('✅ Aba admin exibida');
                 }
+                
+                // Definir perfil do usuário globalmente
+                window.currentUserProfile = userProfile;
                 
                 console.log('✅ Acesso de administrador concedido para admin@scm.local');
             } else {

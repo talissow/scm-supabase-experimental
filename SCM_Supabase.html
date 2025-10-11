@@ -28,6 +28,9 @@
             <div class="user-info">
                 <span id="userName">Carregando...</span>
                 <div class="user-actions">
+                    <button id="manageUsersButton" class="manage-users-btn" style="display: none;" title="Gerenciar Usuários">
+                        👥 Gerenciar
+                    </button>
                     <button id="adminButton" class="admin-btn" style="display: none;" title="Painel Administrativo">
                         ⚙️ Admin
                     </button>
@@ -638,6 +641,138 @@
         </div>
     </div>
 
+    <!-- Modal: Gerenciador Completo de Usuários -->
+    <div id="userManagerModal" class="modal">
+        <div class="modal-content user-manager-content">
+            <div class="modal-header">
+                <h2>👥 Gerenciador de Usuários</h2>
+                <button onclick="closeUserManagerModal()" class="close-btn">×</button>
+            </div>
+            
+            <div class="user-manager-tabs">
+                <button class="tab-btn active" onclick="switchUserTab('users')">👤 Usuários</button>
+                <button class="tab-btn" onclick="switchUserTab('logs')">📊 Logs de Uso</button>
+                <button class="tab-btn" onclick="switchUserTab('stats')">📈 Estatísticas</button>
+            </div>
+
+            <!-- Tab: Usuários -->
+            <div id="usersTab" class="user-tab-content active">
+                <div class="users-header">
+                    <button onclick="showCreateUserModal()" class="btn btn-success">
+                        ➕ Novo Usuário
+                    </button>
+                    <button onclick="exportUsersToCSV()" class="btn btn-info">
+                        📄 Exportar CSV
+                    </button>
+                </div>
+                
+                <div class="users-filters">
+                    <input type="text" id="userSearch" placeholder="🔍 Buscar usuário..." onkeyup="filterUsers()">
+                    <select id="roleFilter" onchange="filterUsers()">
+                        <option value="">Todos os roles</option>
+                        <option value="admin">Admin</option>
+                        <option value="user">Usuário</option>
+                    </select>
+                    <select id="statusFilter" onchange="filterUsers()">
+                        <option value="">Todos os status</option>
+                        <option value="true">Ativo</option>
+                        <option value="false">Inativo</option>
+                    </select>
+                </div>
+
+                <div class="users-table-container">
+                    <table id="usersTable" class="users-table">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Nome</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Criado</th>
+                                <th>Último Acesso</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab: Logs de Uso -->
+            <div id="logsTab" class="user-tab-content">
+                <div class="logs-header">
+                    <button onclick="exportLogsToCSV()" class="btn btn-info">
+                        📄 Exportar Logs CSV
+                    </button>
+                    <button onclick="exportLogsToPDF()" class="btn btn-danger">
+                        📄 Exportar Logs PDF
+                    </button>
+                    <button onclick="clearOldLogs()" class="btn btn-warning">
+                        🗑️ Limpar Logs Antigos
+                    </button>
+                </div>
+
+                <div class="logs-filters">
+                    <input type="date" id="logsDateFrom" onchange="filterLogs()">
+                    <input type="date" id="logsDateTo" onchange="filterLogs()">
+                    <select id="logsUserFilter" onchange="filterLogs()">
+                        <option value="">Todos os usuários</option>
+                    </select>
+                    <select id="logsActionFilter" onchange="filterLogs()">
+                        <option value="">Todas as ações</option>
+                        <option value="login">Login</option>
+                        <option value="logout">Logout</option>
+                        <option value="create">Criar Material</option>
+                        <option value="update">Atualizar Material</option>
+                        <option value="delete">Excluir Material</option>
+                    </select>
+                </div>
+
+                <div class="logs-table-container">
+                    <table id="logsTable" class="logs-table">
+                        <thead>
+                            <tr>
+                                <th>Data/Hora</th>
+                                <th>Usuário</th>
+                                <th>Ação</th>
+                                <th>Detalhes</th>
+                                <th>IP</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Tab: Estatísticas -->
+            <div id="statsTab" class="user-tab-content">
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>👥 Total de Usuários</h3>
+                        <span id="totalUsersStat">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>✅ Usuários Ativos</h3>
+                        <span id="activeUsersStat">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>👑 Administradores</h3>
+                        <span id="adminUsersStat">0</span>
+                    </div>
+                    <div class="stat-card">
+                        <h3>📊 Logins Hoje</h3>
+                        <span id="loginsTodayStat">0</span>
+                    </div>
+                </div>
+
+                <div class="charts-container">
+                    <canvas id="usersChart" width="400" height="200"></canvas>
+                    <canvas id="activityChart" width="400" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Input oculto para upload de arquivos -->
     <input type="file" id="fileInput" style="display: none;" accept=".json,.csv,.xlsx">
 
@@ -649,6 +784,7 @@
     <script src="auth-guard.js"></script>
     <script src="app.js"></script>
     <script src="admin-panel.js"></script>
+    <script src="user-manager.js"></script>
     <script src="check-users.js"></script>
     
     <!-- Script de autenticação -->
