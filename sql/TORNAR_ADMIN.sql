@@ -16,8 +16,7 @@ WHERE email = 'talissonsousa10@gmail.com';
 UPDATE public.users 
 SET 
     role = 'admin',
-    is_active = true,
-    updated_at = NOW()
+    is_active = true
 WHERE email = 'talissonsousa10@gmail.com';
 
 -- 3. Se NÃO existir, criar novo usuário admin
@@ -33,8 +32,7 @@ VALUES (
 ON CONFLICT (id) DO UPDATE SET
     role = 'admin',
     is_active = true,
-    full_name = 'Talisson Sousa de Santana',
-    updated_at = NOW();
+    full_name = 'Talisson Sousa de Santana';
 
 -- 4. Verificar resultado
 SELECT 

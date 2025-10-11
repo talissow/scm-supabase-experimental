@@ -21,8 +21,7 @@ async function tornarAdmin() {
             .from('users')
             .update({
                 role: 'admin',
-                is_active: true,
-                updated_at: new Date().toISOString()
+                is_active: true
             })
             .eq('email', 'talissonsousa10@gmail.com')
             .select();
