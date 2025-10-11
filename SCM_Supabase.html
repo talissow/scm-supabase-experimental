@@ -25,15 +25,15 @@
         <header>
             <div class="header-top">
                 <h1>📦 Controle de Materiais</h1>
-                <div class="user-info">
-                    <span id="userName">Usuário</span>
-                    <div class="user-actions">
-                        <button id="adminButton" class="admin-btn" style="display: none;" title="Painel Administrativo">
-                            ⚙️ Admin
-                        </button>
-                        <button id="logoutButton" class="logout-btn">Sair</button>
-                    </div>
+            <div class="user-info">
+                <span id="userName">Carregando...</span>
+                <div class="user-actions">
+                    <button id="adminButton" class="admin-btn" style="display: none;" title="Painel Administrativo">
+                        ⚙️ Admin
+                    </button>
+                    <button id="logoutButton" class="logout-btn">Sair</button>
                 </div>
+            </div>
             </div>
             <div class="alert-counter" id="alertCounter">
                 <span class="alert-icon">⚠️</span>
@@ -664,7 +664,12 @@
             // Carregar informações do usuário
             const userProfile = await auth.getUserProfile();
             if (userProfile) {
-                document.getElementById('userName').textContent = userProfile.full_name || userProfile.email;
+                // Priorizar nome completo, depois email
+                const displayName = userProfile.full_name || userProfile.email || 'Usuário';
+                document.getElementById('userName').textContent = displayName;
+                console.log('👤 Usuário logado:', displayName);
+            } else {
+                document.getElementById('userName').textContent = 'Usuário';
             }
 
             // Event listener para logout
