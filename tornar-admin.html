@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tornar Admin - SCM</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>👑</text></svg>">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #2196f3;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .warning-box {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .success-box {
+            background: #d4edda;
+            border-left: 4px solid #28a745;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .error-box {
+            background: #f8d7da;
+            border-left: 4px solid #dc3545;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 18px;
+            margin: 10px 0;
+            transition: all 0.3s;
+            width: 100%;
+            font-weight: bold;
+        }
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.4);
+        }
+        .loading {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-size: 18px;
+        }
+        .step {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #667eea;
+        }
+        .step-number {
+            display: inline-block;
+            background: #667eea;
+            color: white;
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 30px;
+            margin-right: 10px;
+            font-weight: bold;
+        }
+        code {
+            background: #f5f5f5;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>👑 Tornar Admin</h1>
+        <p class="subtitle">Transformar conta em Administrador</p>
+        
+        <div class="info-box">
+            <h3>📧 Conta a ser promovida:</h3>
+            <p><strong>Email:</strong> <code>talissonsousa10@gmail.com</code></p>
+            <p><strong>Nome:</strong> Talisson Sousa de Santana</p>
+            <p><strong>Nova Role:</strong> <strong style="color: #ffc107;">ADMIN 👑</strong></p>
+        </div>
+
+        <button class="btn" onclick="makeAdmin()">
+            👑 TRANSFORMAR EM ADMIN AGORA
+        </button>
+
+        <div id="results"></div>
+
+        <div class="warning-box" style="margin-top: 30px;">
+            <h3>⚠️ Importante:</h3>
+            <p>• Esta ação define a conta como administrador</p>
+            <p>• O usuário terá acesso total ao sistema</p>
+            <p>• O botão "⚙️ Admin" aparecerá após recarregar</p>
+        </div>
+    </div>
+
+    <!-- Scripts do Supabase -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-config.js"></script>
+    
+    <script>
+        let supabaseClient;
+        
+        // Inicializar Supabase
+        async function initSupabase() {
+            try {
+                supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+                console.log('✅ Supabase inicializado');
+                return true;
+            } catch (error) {
+                console.error('❌ Erro ao inicializar Supabase:', error);
+                return false;
+            }
+        }
+        
+        // Mostrar resultado na tela
+        function showResult(message, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const className = type === 'error' ? 'error-box' : type === 'success' ? 'success-box' : 'info-box';
+            resultsDiv.innerHTML = `<div class="${className}">${message}</div>`;
+        }
+        
+        // Transformar em admin
+        async function makeAdmin() {
+            const email = 'talissonsousa10@gmail.com';
+            
+            showResult('<div class="loading">🔄 Processando...<br>Transformando conta em admin...</div>');
+            
+            try {
+                if (!supabaseClient) {
+                    await initSupabase();
+                }
+                
+                // Passo 1: Buscar usuário por email para pegar o ID correto do Auth
+                console.log('🔍 Buscando usuário por email...');
+                
+                const { data: { session } } = await supabaseClient.auth.getSession();
+                let userId = null;
+                
+                // Se estiver logado, usar ID da sessão
+                if (session && session.user.email === email) {
+                    userId = session.user.id;
+                    console.log('✅ Usando ID da sessão atual:', userId);
+                }
+                
+                // Verificar se já existe na tabela users
+                console.log('🔍 Verificando se usuário existe na tabela users...');
+                const { data: existingUser, error: checkError } = await supabaseClient
+                    .from('users')
+                    .select('*')
+                    .eq('email', email)
+                    .single();
+                
+                let result;
+                
+                if (existingUser) {
+                    console.log('📝 Usuário encontrado, atualizando...');
+                    console.log('   ID atual:', existingUser.id);
+                    console.log('   Role atual:', existingUser.role);
+                    
+                    // Atualizar usuário existente
+                    const updateData = {
+                        role: 'admin',
+                        is_active: true,
+                        updated_at: new Date().toISOString()
+                    };
+                    
+                    // Se temos o userId correto do Auth, atualizar também
+                    if (userId && userId !== existingUser.id) {
+                        updateData.id = userId;
+                    }
+                    
+                    const { error: updateError } = await supabaseClient
+                        .from('users')
+                        .update(updateData)
+                        .eq('email', email);
+                    
+                    if (updateError) {
+                        throw new Error('Erro ao atualizar: ' + updateError.message);
+                    }
+                    
+                    result = {
+                        action: 'atualizado',
+                        id: userId || existingUser.id
+                    };
+                    
+                } else if (userId) {
+                    console.log('➕ Usuário não existe na tabela, criando...');
+                    // Criar novo registro
+                    const { error: insertError } = await supabaseClient
+                        .from('users')
+                        .insert({
+                            id: userId,
+                            email: email,
+                            full_name: 'Talisson Sousa de Santana',
+                            role: 'admin',
+                            is_active: true
+                        });
+                    
+                    if (insertError) {
+                        throw new Error('Erro ao criar: ' + insertError.message);
+                    }
+                    
+                    result = {
+                        action: 'criado',
+                        id: userId
+                    };
+                } else {
+                    throw new Error('Usuário não encontrado e você não está logado com essa conta. Por favor, faça login com talissonsousa10@gmail.com primeiro.');
+                }
+                
+                // Sucesso!
+                showResult(`
+                    <h2 style="color: #28a745; text-align: center;">✅ SUCESSO!</h2>
+                    <div class="step">
+                        <span class="step-number">✓</span>
+                        <strong>Usuário ${result.action} como ADMIN</strong>
+                    </div>
+                    
+                    <h3>📋 Dados Atualizados:</h3>
+                    <div class="step">
+                        • <strong>Email:</strong> ${email}<br>
+                        • <strong>Nome:</strong> Talisson Sousa de Santana<br>
+                        • <strong>Role:</strong> <strong style="color: #ffc107;">ADMIN 👑</strong><br>
+                        • <strong>Status:</strong> <strong style="color: #28a745;">ATIVO ✅</strong><br>
+                        • <strong>ID:</strong> ${result.id}
+                    </div>
+                    
+                    <h3>🎯 Próximos Passos:</h3>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        Vá para: <a href="/login.html" target="_blank">Página de Login</a>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        Faça login com: <code>talissonsousa10@gmail.com</code>
+                    </div>
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        Digite sua senha (se não lembrar, use "Esqueci minha senha")
+                    </div>
+                    <div class="step">
+                        <span class="step-number">4</span>
+                        Após o login, o botão <strong>"⚙️ Admin"</strong> aparecerá no header!
+                    </div>
+                    <div class="step">
+                        <span class="step-number">5</span>
+                        A aba <strong>"👥 Usuários"</strong> ficará visível!
+                    </div>
+                    
+                    <div style="text-align: center; margin-top: 30px;">
+                        <a href="/login.html" style="text-decoration: none;">
+                            <button class="btn">🚀 IR PARA LOGIN</button>
+                        </a>
+                    </div>
+                `, 'success');
+                
+                console.log('✅ Conta transformada em admin com sucesso!');
+                
+            } catch (error) {
+                console.error('❌ Erro:', error);
+                showResult(`
+                    <h3>❌ Erro ao Transformar em Admin</h3>
+                    <p><strong>Erro:</strong> ${error.message}</p>
+                    
+                    <h4>💡 Soluções Alternativas:</h4>
+                    <div class="step">
+                        <span class="step-number">1</span>
+                        <strong>Via SQL no Supabase:</strong><br>
+                        Acesse o <a href="https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi/editor" target="_blank">SQL Editor</a> e execute:
+                        <pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; overflow-x: auto;">
+UPDATE public.users 
+SET role = 'admin', is_active = true
+WHERE email = 'talissonsousa10@gmail.com';</pre>
+                    </div>
+                    
+                    <div class="step">
+                        <span class="step-number">2</span>
+                        <strong>Faça login primeiro:</strong><br>
+                        Se o erro diz que você não está logado, <a href="/login.html">faça login</a> e tente novamente
+                    </div>
+                    
+                    <div class="step">
+                        <span class="step-number">3</span>
+                        <strong>Verifique se o usuário existe:</strong><br>
+                        Acesse <a href="/verificar-usuarios.html">verificar-usuarios.html</a> para ver todos os usuários
+                    </div>
+                `, 'error');
+            }
+        }
+        
+        // Inicializar quando carregar a página
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initSupabase();
+            
+            // Auto-executar após 1 segundo
+            showResult(`
+                <div class="info-box">
+                    <h3>🎯 Pronto para Transformar em Admin</h3>
+                    <p>Clique no botão acima para transformar a conta <code>talissonsousa10@gmail.com</code> em administrador.</p>
+                    <p><strong>O que será feito:</strong></p>
+                    <ul>
+                        <li>✅ Role será definido como "admin"</li>
+                        <li>✅ Status será ativado</li>
+                        <li>✅ Permissões completas serão concedidas</li>
+                    </ul>
+                </div>
+            `);
+        });
+    </script>
+</body>
+</html>
