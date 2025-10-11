@@ -4,12 +4,32 @@
     box-sizing: border-box;
 }
 
+/* ===== PROTEÇÃO ANTI-DEBUG ===== */
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     min-height: 100vh;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    -webkit-touch-callout: none;
+    -webkit-tap-highlight-color: transparent;
     padding: 20px;
     color: #333;
+}
+
+/* Permitir seleção apenas em inputs */
+input, textarea, [contenteditable] {
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+}
+
+/* Ocultar elementos de debug */
+*[style*="display: none"] {
+    display: none !important;
 }
 
 .container {
