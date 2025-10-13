@@ -678,6 +678,12 @@
                         <option value="true">Ativo</option>
                         <option value="false">Inativo</option>
                     </select>
+                    <select id="itemsPerPage" onchange="changeItemsPerPage()">
+                        <option value="10">10 por página</option>
+                        <option value="25">25 por página</option>
+                        <option value="50">50 por página</option>
+                        <option value="100">100 por página</option>
+                    </select>
                 </div>
 
                 <div class="users-table-container">
@@ -695,6 +701,24 @@
                         </thead>
                         <tbody></tbody>
                     </table>
+                </div>
+
+                <!-- Controles de Paginação -->
+                <div class="pagination-controls">
+                    <div class="pagination-info">
+                        <span id="paginationInfo">Mostrando 0 de 0 usuários</span>
+                    </div>
+                    <div class="pagination-buttons">
+                        <button id="firstPage" onclick="goToFirstPage()" class="btn btn-sm btn-secondary" disabled>⏮️ Primeira</button>
+                        <button id="prevPage" onclick="goToPreviousPage()" class="btn btn-sm btn-secondary" disabled>◀️ Anterior</button>
+                        
+                        <div class="page-numbers" id="pageNumbers">
+                            <!-- Números das páginas serão inseridos aqui -->
+                        </div>
+                        
+                        <button id="nextPage" onclick="goToNextPage()" class="btn btn-sm btn-secondary" disabled>Próxima ▶️</button>
+                        <button id="lastPage" onclick="goToLastPage()" class="btn btn-sm btn-secondary" disabled>Última ⏭️</button>
+                    </div>
                 </div>
             </div>
 

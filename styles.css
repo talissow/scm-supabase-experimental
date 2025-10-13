@@ -273,6 +273,97 @@ input, textarea, [contenteditable] {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
+/* ===== PAGINAÇÃO ===== */
+.pagination-controls {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 20px;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #dee2e6;
+}
+
+.pagination-info {
+    font-size: 14px;
+    color: #6c757d;
+    font-weight: 500;
+}
+
+.pagination-buttons {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.page-numbers {
+    display: flex;
+    gap: 2px;
+    margin: 0 10px;
+}
+
+.page-number {
+    padding: 6px 12px;
+    border: 1px solid #dee2e6;
+    background: white;
+    color: #495057;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    min-width: 40px;
+    text-align: center;
+}
+
+.page-number:hover {
+    background: #e9ecef;
+    border-color: #adb5bd;
+}
+
+.page-number.active {
+    background: #667eea;
+    color: white;
+    border-color: #667eea;
+}
+
+.page-number.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #f8f9fa;
+}
+
+.page-number.disabled:hover {
+    background: #f8f9fa;
+    border-color: #dee2e6;
+}
+
+.btn-sm {
+    padding: 6px 12px;
+    font-size: 12px;
+    border-radius: 4px;
+    min-width: auto;
+}
+
+.btn-secondary {
+    background: #6c757d;
+    color: white;
+    border: 1px solid #6c757d;
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background: #5a6268;
+    border-color: #545b62;
+}
+
+.btn-secondary:disabled {
+    background: #e9ecef;
+    color: #6c757d;
+    border-color: #dee2e6;
+    cursor: not-allowed;
+    opacity: 0.65;
+}
+
 /* ===== RESPONSIVIDADE ===== */
 @media (max-width: 768px) {
     .user-manager-content {
@@ -287,6 +378,23 @@ input, textarea, [contenteditable] {
     
     .users-filters, .logs-filters {
         flex-direction: column;
+    }
+    
+    .pagination-controls {
+        flex-direction: column;
+        gap: 15px;
+        align-items: stretch;
+    }
+    
+    .pagination-buttons {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .page-numbers {
+        order: -1;
+        justify-content: center;
+        margin: 10px 0;
     }
     
     .stats-grid {

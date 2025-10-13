@@ -6,6 +6,11 @@ let allLogs = [];
 let filteredUsers = [];
 let filteredLogs = [];
 
+// Variáveis de paginação
+let currentPage = 1;
+let itemsPerPage = 10; // Padrão fixo em 10
+let totalPages = 1;
+
 // Inicializar gerenciador
 function initUserManager() {
     console.log('🔧 Inicializando gerenciador de usuários...');
@@ -99,7 +104,13 @@ function renderUsersTable() {
 
     tbody.innerHTML = '';
 
-    filteredUsers.forEach(user => {
+    // Calcular paginação
+    totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = Math.min(startIndex + itemsPerPage, filteredUsers.length);
+    const usersToShow = filteredUsers.slice(startIndex, endIndex);
+
+    usersToShow.forEach(user => {
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${user.email}</td>
@@ -118,6 +129,9 @@ function renderUsersTable() {
         `;
         tbody.appendChild(row);
     });
+
+    // Atualizar controles de paginação
+    updatePaginationControls();
 }
 
 // Filtrar usuários
@@ -135,7 +149,100 @@ function filterUsers() {
         return matchesSearch && matchesRole && matchesStatus;
     });
 
+    // Resetar para primeira página ao filtrar
+    currentPage = 1;
     renderUsersTable();
+}
+
+// ===== FUNÇÕES DE PAGINAÇÃO =====
+
+// Mudar itens por página
+function changeItemsPerPage() {
+    const select = document.getElementById('itemsPerPage');
+    itemsPerPage = parseInt(select.value);
+    currentPage = 1; // Voltar para primeira página
+    renderUsersTable();
+}
+
+// Atualizar controles de paginação
+function updatePaginationControls() {
+    const paginationInfo = document.getElementById('paginationInfo');
+    const pageNumbers = document.getElementById('pageNumbers');
+    const firstPage = document.getElementById('firstPage');
+    const prevPage = document.getElementById('prevPage');
+    const nextPage = document.getElementById('nextPage');
+    const lastPage = document.getElementById('lastPage');
+
+    if (!paginationInfo) return;
+
+    // Atualizar informação de paginação
+    const startIndex = (currentPage - 1) * itemsPerPage + 1;
+    const endIndex = Math.min(currentPage * itemsPerPage, filteredUsers.length);
+    paginationInfo.textContent = `Mostrando ${startIndex} a ${endIndex} de ${filteredUsers.length} usuários`;
+
+    // Atualizar botões de navegação
+    firstPage.disabled = currentPage === 1;
+    prevPage.disabled = currentPage === 1;
+    nextPage.disabled = currentPage === totalPages;
+    lastPage.disabled = currentPage === totalPages;
+
+    // Gerar números das páginas
+    if (pageNumbers) {
+        pageNumbers.innerHTML = '';
+        
+        // Mostrar até 5 páginas
+        let startPage = Math.max(1, currentPage - 2);
+        let endPage = Math.min(totalPages, currentPage + 2);
+        
+        // Ajustar se estiver no início ou fim
+        if (endPage - startPage < 4) {
+            if (startPage === 1) {
+                endPage = Math.min(totalPages, startPage + 4);
+            } else {
+                startPage = Math.max(1, endPage - 4);
+            }
+        }
+        
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
+            pageBtn.textContent = i;
+            pageBtn.onclick = () => goToPage(i);
+            pageNumbers.appendChild(pageBtn);
+        }
+    }
+}
+
+// Ir para página específica
+function goToPage(page) {
+    if (page >= 1 && page <= totalPages && page !== currentPage) {
+        currentPage = page;
+        renderUsersTable();
+    }
+}
+
+// Ir para página anterior
+function goToPreviousPage() {
+    if (currentPage > 1) {
+        goToPage(currentPage - 1);
+    }
+}
+
+// Ir para próxima página
+function goToNextPage() {
+    if (currentPage < totalPages) {
+        goToPage(currentPage + 1);
+    }
+}
+
+// Ir para primeira página
+function goToFirstPage() {
+    goToPage(1);
+}
+
+// Ir para última página
+function goToLastPage() {
+    goToPage(totalPages);
 }
 
 // Atualizar filtros de usuários
