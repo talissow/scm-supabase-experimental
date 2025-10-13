@@ -807,6 +807,7 @@
     <script src="router.js"></script>
     <script src="auth-guard.js"></script>
     <script src="app.js"></script>
+    <script src="init-admin.js"></script>
     <script src="admin-panel.js"></script>
     <script src="user-manager.js"></script>
     <script src="check-users.js"></script>
@@ -841,6 +842,17 @@
             });
 
             console.log('🔐 Sistema protegido - usuário autenticado');
+            
+            // Event listeners para modais de usuário
+            const userForm = document.getElementById('userForm');
+            if (userForm) {
+                userForm.addEventListener('submit', handleUserSubmit);
+            }
+            
+            const confirmDeleteBtn = document.getElementById('confirmDeleteUser');
+            if (confirmDeleteBtn) {
+                confirmDeleteBtn.addEventListener('click', confirmDeleteUser);
+            }
         });
     </script>
 </body>

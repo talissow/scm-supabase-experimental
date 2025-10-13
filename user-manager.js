@@ -122,7 +122,7 @@ function renderUsersTable() {
             <td>
                 <div class="user-actions-btns">
                     <button onclick="editUser('${user.id}')" class="btn btn-sm btn-primary">✏️ Editar</button>
-                    <button onclick="deleteUser('${user.id}')" class="btn btn-sm btn-danger">🗑️ Excluir</button>
+                    <button onclick="deleteUserFromManager('${user.id}')" class="btn btn-sm btn-danger">🗑️ Excluir</button>
                     <button onclick="viewUserLogs('${user.id}')" class="btn btn-sm btn-info">📊 Logs</button>
                 </div>
             </td>
@@ -536,22 +536,28 @@ function downloadCSV(content, filename) {
 
 // Editar usuário
 function editUser(userId) {
-    const user = allUsers.find(u => u.id === userId);
-    if (!user) return;
+    // Usar o modal de edição do admin-panel.js
+    if (typeof showCreateUserModal === 'function') {
+        showCreateUserModal(userId);
+    } else {
+        // Fallback para edição simples
+        const user = allUsers.find(u => u.id === userId);
+        if (!user) return;
 
-    const newName = prompt('Novo nome completo:', user.full_name || '');
-    if (newName === null) return;
+        const newName = prompt('Novo nome completo:', user.full_name || '');
+        if (newName === null) return;
 
-    const newRole = prompt('Novo role (admin/user):', user.role);
-    if (newRole === null) return;
+        const newRole = prompt('Novo role (admin/user):', user.role);
+        if (newRole === null) return;
 
-    const isActive = confirm('Usuário ativo?');
-    
-    updateUser(userId, {
-        full_name: newName,
-        role: newRole,
-        is_active: isActive
-    });
+        const isActive = confirm('Usuário ativo?');
+        
+        updateUser(userId, {
+            full_name: newName,
+            role: newRole,
+            is_active: isActive
+        });
+    }
 }
 
 // Atualizar usuário
@@ -580,7 +586,7 @@ async function updateUser(userId, updates) {
 }
 
 // Excluir usuário
-function deleteUser(userId) {
+function deleteUserFromManager(userId) {
     const user = allUsers.find(u => u.id === userId);
     if (!user) return;
 
@@ -589,8 +595,14 @@ function deleteUser(userId) {
         return;
     }
 
-    if (confirm(`Tem certeza que deseja excluir o usuário ${user.email}?`)) {
-        confirmDeleteUser(userId);
+    // Usar o modal de confirmação do admin-panel.js se disponível
+    if (typeof window.deleteUser === 'function') {
+        window.deleteUser(userId);
+    } else {
+        // Fallback para confirmação simples
+        if (confirm(`Tem certeza que deseja excluir o usuário ${user.email}?`)) {
+            confirmDeleteUser(userId);
+        }
     }
 }
 
@@ -703,6 +715,13 @@ async function getClientIP() {
 // Inicializar quando o DOM estiver carregado
 document.addEventListener('DOMContentLoaded', () => {
     // Aguardar um pouco para garantir que auth esteja inicializado
+    setTimeout(() => {
+        initUserManager();
+    }, 2000);
+});
+
+// Também inicializar quando window estiver carregado
+window.addEventListener('load', () => {
     setTimeout(() => {
         initUserManager();
     }, 1000);

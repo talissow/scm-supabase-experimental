@@ -109,18 +109,47 @@ function updateAdminStats(users) {
 }
 
 // Mostrar modal de criar/editar usuário
-function showCreateUserModal(userId = null) {
+async function showCreateUserModal(userId = null) {
     const modal = document.getElementById('userModal');
     const modalTitle = document.getElementById('userModalTitle');
     const form = document.getElementById('userForm');
 
     if (userId) {
         modalTitle.textContent = '✏️ Editar Usuário';
-        // Preencher formulário com dados do usuário
-        // Implementar busca de dados do usuário
+        
+        try {
+            // Buscar dados do usuário
+            const { data: user, error } = await supabaseClient
+                .from('users')
+                .select('*')
+                .eq('id', userId)
+                .single();
+
+            if (error) throw error;
+
+            // Preencher formulário
+            document.getElementById('userId').value = user.id;
+            document.getElementById('userEmail').value = user.email;
+            document.getElementById('userFullName').value = user.full_name || '';
+            document.getElementById('userRole').value = user.role;
+            document.getElementById('userIsActive').checked = user.is_active;
+            
+            // Ocultar campo de senha para edição
+            const passwordField = document.getElementById('userPassword').parentElement;
+            passwordField.style.display = 'none';
+        } catch (error) {
+            console.error('Erro ao carregar usuário:', error);
+            alert('❌ Erro ao carregar dados do usuário');
+            return;
+        }
     } else {
         modalTitle.textContent = '➕ Novo Usuário';
         form.reset();
+        document.getElementById('userId').value = '';
+        
+        // Mostrar campo de senha para criação
+        const passwordField = document.getElementById('userPassword').parentElement;
+        passwordField.style.display = 'block';
     }
 
     modal.style.display = 'block';
@@ -131,6 +160,7 @@ async function handleUserSubmit(e) {
     e.preventDefault();
     
     const formData = new FormData(e.target);
+    const userId = document.getElementById('userId').value;
     const userData = {
         email: formData.get('email'),
         full_name: formData.get('full_name'),
@@ -139,8 +169,43 @@ async function handleUserSubmit(e) {
     };
 
     try {
-        // Implementar criação/atualização de usuário
-        console.log('Dados do usuário:', userData);
+        if (userId) {
+            // Atualizar usuário existente
+            const { error } = await supabaseClient
+                .from('users')
+                .update(userData)
+                .eq('id', userId);
+
+            if (error) throw error;
+            
+            alert('✅ Usuário atualizado com sucesso!');
+        } else {
+            // Criar novo usuário
+            const { data: authData, error: authError } = await supabaseClient.auth.admin.createUser({
+                email: userData.email,
+                password: formData.get('password'),
+                email_confirm: true,
+                user_metadata: {
+                    full_name: userData.full_name
+                }
+            });
+
+            if (authError) throw authError;
+
+            const { error: userError } = await supabaseClient
+                .from('users')
+                .insert({
+                    id: authData.user.id,
+                    email: userData.email,
+                    full_name: userData.full_name,
+                    role: userData.role,
+                    is_active: userData.is_active
+                });
+
+            if (userError) throw userError;
+            
+            alert('✅ Usuário criado com sucesso!');
+        }
         
         // Fechar modal
         closeUserModal();
@@ -149,6 +214,7 @@ async function handleUserSubmit(e) {
         loadUsers();
     } catch (error) {
         console.error('Erro ao salvar usuário:', error);
+        alert('❌ Erro ao salvar usuário: ' + error.message);
     }
 }
 
@@ -158,17 +224,79 @@ function editUser(userId) {
 }
 
 // Excluir usuário
-function deleteUser(userId) {
-    const modal = document.getElementById('deleteUserModal');
-    modal.style.display = 'block';
-    
-    // Armazenar ID para exclusão
-    modal.dataset.userId = userId;
+async function deleteUser(userId) {
+    try {
+        // Buscar dados do usuário
+        const { data: user, error } = await supabaseClient
+            .from('users')
+            .select('*')
+            .eq('id', userId)
+            .single();
+
+        if (error) throw error;
+
+        // Não permitir exclusão do admin padrão
+        if (user.email === 'admin@scm.local') {
+            alert('❌ Não é possível excluir o administrador padrão do sistema!');
+            return;
+        }
+
+        const modal = document.getElementById('deleteUserModal');
+        const userNameElement = document.getElementById('deleteUserName');
+        
+        if (userNameElement) {
+            userNameElement.textContent = user.full_name || user.email;
+        }
+        
+        modal.style.display = 'block';
+        
+        // Armazenar ID para exclusão
+        modal.dataset.userId = userId;
+    } catch (error) {
+        console.error('Erro ao carregar usuário:', error);
+        alert('❌ Erro ao carregar dados do usuário');
+    }
 }
 
 // Fechar modal de usuário
 function closeUserModal() {
     document.getElementById('userModal').style.display = 'none';
+}
+
+// Confirmar exclusão de usuário
+async function confirmDeleteUser() {
+    const modal = document.getElementById('deleteUserModal');
+    const userId = modal.dataset.userId;
+    
+    if (!userId) {
+        alert('❌ ID do usuário não encontrado');
+        return;
+    }
+
+    try {
+        // Excluir usuário da tabela users
+        const { error: userError } = await supabaseClient
+            .from('users')
+            .delete()
+            .eq('id', userId);
+
+        if (userError) throw userError;
+
+        // Excluir usuário do Auth (opcional - pode manter para histórico)
+        // const { error: authError } = await supabaseClient.auth.admin.deleteUser(userId);
+        // if (authError) console.warn('Aviso: Erro ao excluir do Auth:', authError);
+        
+        alert('✅ Usuário excluído com sucesso!');
+        
+        // Fechar modal
+        closeDeleteUserModal();
+        
+        // Recarregar lista
+        loadUsers();
+    } catch (error) {
+        console.error('Erro ao excluir usuário:', error);
+        alert('❌ Erro ao excluir usuário: ' + error.message);
+    }
 }
 
 // Fechar modal de confirmação de exclusão
@@ -178,3 +306,11 @@ function closeDeleteUserModal() {
 
 // Sistema simplificado - apenas admin@scm.local é admin
 console.log('ℹ️ Sistema simplificado: apenas admin@scm.local tem acesso de administrador');
+
+// Inicializar quando o DOM estiver carregado
+document.addEventListener('DOMContentLoaded', () => {
+    // Aguardar um pouco para garantir que auth esteja inicializado
+    setTimeout(() => {
+        checkAdminAccess();
+    }, 1500);
+});
