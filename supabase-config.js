@@ -1,71 +1,61 @@
-// ===== CONFIGURAÇÃO DO SUPABASE =====
-// Substitua com suas credenciais do Supabase
+(function() {
+  // Credenciais do Supabase (configuradas com suas credenciais)
+  const DEFAULT_CONFIG = {
+    url: 'https://kaqkzrngebxfuvquromi.supabase.co',
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthcWt6cm5nZWJ4ZnV2cXVyb21pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMzQ5MDQsImV4cCI6MjA3NTYxMDkwNH0.3O09SWqE4oajOfZMdhb-waVXlAw-FwYb0qr6IsZxZro'
+  };
 
-// Variáveis globais para compatibilidade
-const SUPABASE_URL = 'https://kaqkzrngebxfuvquromi.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImthcWt6cm5nZWJ4ZnV2cXVyb21pIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwMzQ5MDQsImV4cCI6MjA3NTYxMDkwNH0.3O09SWqE4oajOfZMdhb-waVXlAw-FwYb0qr6IsZxZro';
+  const SUPABASE_CONFIG = window.SUPABASE_CONFIG || DEFAULT_CONFIG;
+  const SUPABASE_URL = SUPABASE_CONFIG.url;
+  const SUPABASE_ANON_KEY = SUPABASE_CONFIG.anonKey;
 
-const SUPABASE_CONFIG = {
-    url: SUPABASE_URL,
-    anonKey: SUPABASE_ANON_KEY
-};
+  function isSupabaseConfigured() {
+    return (
+      typeof SUPABASE_URL === 'string' && SUPABASE_URL.startsWith('http') &&
+      typeof SUPABASE_ANON_KEY === 'string' && SUPABASE_ANON_KEY.length > 20
+    );
+  }
 
-// Inicializar cliente Supabase
-let supabaseClient = null;
-
-function initSupabase() {
-    console.log('🔄 Tentando inicializar Supabase...');
-    console.log('Supabase library:', typeof supabase);
-    console.log('SUPABASE_CONFIG:', SUPABASE_CONFIG);
-    
-    if (typeof supabase === 'undefined') {
-        console.error('❌ Supabase library não carregada!');
-        console.log('Adicione no HTML: <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>');
-        return false;
-    }
-    
-    if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey) {
-        console.error('❌ Configuração do Supabase incompleta!');
-        console.log('URL:', SUPABASE_CONFIG.url);
-        console.log('Key:', SUPABASE_CONFIG.anonKey ? 'Definida' : 'Não definida');
-        return false;
-    }
-    
+  function initSupabase() {
     try {
-        supabaseClient = supabase.createClient(
-            SUPABASE_CONFIG.url,
-            SUPABASE_CONFIG.anonKey
-        );
-        console.log('✅ Supabase inicializado com sucesso!');
-        console.log('Client:', supabaseClient);
-        return true;
-    } catch (error) {
-        console.error('❌ Erro ao inicializar Supabase:', error);
+      if (!isSupabaseConfigured()) {
+        console.warn('⚪ Supabase não configurado (usando IndexedDB local)');
         return false;
+      }
+      if (typeof supabase === 'undefined') {
+        console.error('❌ Biblioteca Supabase não carregada');
+        return false;
+      }
+      if (window.supabaseClient) {
+        return true;
+      }
+      window.supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      console.log('✅ Supabase client inicializado');
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao inicializar Supabase:', error);
+      return false;
     }
-}
+  }
 
-// Verificar se está online
-function isOnline() {
+  function isOnline() {
     return navigator.onLine;
-}
+  }
 
-// Verificar se Supabase está configurado
-function isSupabaseConfigured() {
-    return SUPABASE_CONFIG.url !== 'COLE_SUA_URL_AQUI' &&
-           SUPABASE_CONFIG.anonKey !== 'COLE_SUA_CHAVE_PUBLICA_AQUI';
-}
+  function getOperationMode() {
+    if (typeof supabase !== 'undefined' && isSupabaseConfigured() && isOnline()) {
+      return 'online';
+    }
+    return isOnline() ? 'local' : 'offline';
+  }
 
-// Modo de operação do sistema
-function getOperationMode() {
-    if (!isSupabaseConfigured()) {
-        return 'local'; // Modo offline (IndexedDB)
-    }
-    
-    if (!isOnline()) {
-        return 'offline'; // Offline temporário
-    }
-    
-    return 'online'; // Online com Supabase
-}
+  // Exportar globais esperadas por outras partes do sistema
+  window.SUPABASE_CONFIG = SUPABASE_CONFIG;
+  window.SUPABASE_URL = SUPABASE_URL;
+  window.SUPABASE_ANON_KEY = SUPABASE_ANON_KEY;
+  window.isSupabaseConfigured = window.isSupabaseConfigured || isSupabaseConfigured;
+  window.initSupabase = window.initSupabase || initSupabase;
+  window.isOnline = window.isOnline || isOnline;
+  window.getOperationMode = window.getOperationMode || getOperationMode;
+})();
 

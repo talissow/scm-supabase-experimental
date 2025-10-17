@@ -3,6 +3,30 @@
 
 (function() {
     'use strict';
+    // ===== MODO DESENVOLVIMENTO: DESABILITAR PROTEÇÃO =====
+    try {
+        const params = new URLSearchParams(window.location.search);
+        const isDevEnv = (
+            window.location.hostname === 'localhost' ||
+            window.location.hostname === '127.0.0.1' ||
+            window.location.protocol === 'file:' ||
+            params.has('dev') ||
+            params.has('noSecurity') ||
+            params.has('debug') ||
+            window.__DISABLE_SECURITY__ === true
+        );
+
+        if (isDevEnv) {
+            console.log('🟡 Segurança desativada (ambiente de desenvolvimento/local).');
+            // noop export para manter compatibilidade
+            window.disableSecurity = function() {
+                console.log('Segurança já desativada para desenvolvimento.');
+            };
+            return; // Não ativar bloqueios em ambiente dev
+        }
+    } catch (err) {
+        console.warn('Aviso: falha ao verificar modo desenvolvimento', err);
+    }
     
     // ===== DETECTAR E BLOQUEAR DEVTOOLS =====
     let devtools = {open: false, orientation: null};

@@ -7,9 +7,9 @@ let filteredUsers = [];
 let filteredLogs = [];
 
 // Variáveis de paginação
-let currentPage = 1;
-let itemsPerPage = 10; // Padrão fixo em 10
-let totalPages = 1;
+let usersCurrentPage = 1;
+let usersItemsPerPage = 10; // Padrão fixo em 10
+let usersTotalPages = 1;
 
 // Inicializar gerenciador
 function initUserManager() {
@@ -105,9 +105,9 @@ function renderUsersTable() {
     tbody.innerHTML = '';
 
     // Calcular paginação
-    totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
-    const startIndex = (currentPage - 1) * itemsPerPage;
-    const endIndex = Math.min(startIndex + itemsPerPage, filteredUsers.length);
+    usersTotalPages = Math.ceil(filteredUsers.length / usersItemsPerPage);
+    const startIndex = (usersCurrentPage - 1) * usersItemsPerPage;
+    const endIndex = Math.min(startIndex + usersItemsPerPage, filteredUsers.length);
     const usersToShow = filteredUsers.slice(startIndex, endIndex);
 
     usersToShow.forEach(user => {
@@ -131,7 +131,7 @@ function renderUsersTable() {
     });
 
     // Atualizar controles de paginação
-    updatePaginationControls();
+    updateUsersPaginationControls();
 }
 
 // Filtrar usuários
@@ -150,54 +150,54 @@ function filterUsers() {
     });
 
     // Resetar para primeira página ao filtrar
-    currentPage = 1;
+    usersCurrentPage = 1;
     renderUsersTable();
 }
 
 // ===== FUNÇÕES DE PAGINAÇÃO =====
 
 // Mudar itens por página
-function changeItemsPerPage() {
-    const select = document.getElementById('itemsPerPage');
-    itemsPerPage = parseInt(select.value);
-    currentPage = 1; // Voltar para primeira página
+function usersChangeItemsPerPage() {
+    const select = document.getElementById('usersItemsPerPage');
+    usersItemsPerPage = parseInt(select.value);
+    usersCurrentPage = 1; // Voltar para primeira página
     renderUsersTable();
 }
 
 // Atualizar controles de paginação
-function updatePaginationControls() {
-    const paginationInfo = document.getElementById('paginationInfo');
-    const pageNumbers = document.getElementById('pageNumbers');
-    const firstPage = document.getElementById('firstPage');
-    const prevPage = document.getElementById('prevPage');
-    const nextPage = document.getElementById('nextPage');
-    const lastPage = document.getElementById('lastPage');
+function updateUsersPaginationControls() {
+    const paginationInfo = document.getElementById('usersPaginationInfo');
+    const pageNumbers = document.getElementById('usersPageNumbers');
+    const firstPage = document.getElementById('usersFirstPage');
+    const prevPage = document.getElementById('usersPrevPage');
+    const nextPage = document.getElementById('usersNextPage');
+    const lastPage = document.getElementById('usersLastPage');
 
     if (!paginationInfo) return;
 
     // Atualizar informação de paginação
-    const startIndex = (currentPage - 1) * itemsPerPage + 1;
-    const endIndex = Math.min(currentPage * itemsPerPage, filteredUsers.length);
+    const startIndex = (usersCurrentPage - 1) * usersItemsPerPage + 1;
+    const endIndex = Math.min(usersCurrentPage * usersItemsPerPage, filteredUsers.length);
     paginationInfo.textContent = `Mostrando ${startIndex} a ${endIndex} de ${filteredUsers.length} usuários`;
 
     // Atualizar botões de navegação
-    firstPage.disabled = currentPage === 1;
-    prevPage.disabled = currentPage === 1;
-    nextPage.disabled = currentPage === totalPages;
-    lastPage.disabled = currentPage === totalPages;
+    firstPage.disabled = usersCurrentPage === 1;
+    prevPage.disabled = usersCurrentPage === 1;
+    nextPage.disabled = usersCurrentPage === usersTotalPages;
+    lastPage.disabled = usersCurrentPage === usersTotalPages;
 
     // Gerar números das páginas
     if (pageNumbers) {
         pageNumbers.innerHTML = '';
         
         // Mostrar até 5 páginas
-        let startPage = Math.max(1, currentPage - 2);
-        let endPage = Math.min(totalPages, currentPage + 2);
+        let startPage = Math.max(1, usersCurrentPage - 2);
+        let endPage = Math.min(usersTotalPages, usersCurrentPage + 2);
         
         // Ajustar se estiver no início ou fim
         if (endPage - startPage < 4) {
             if (startPage === 1) {
-                endPage = Math.min(totalPages, startPage + 4);
+                endPage = Math.min(usersTotalPages, startPage + 4);
             } else {
                 startPage = Math.max(1, endPage - 4);
             }
@@ -205,44 +205,44 @@ function updatePaginationControls() {
         
         for (let i = startPage; i <= endPage; i++) {
             const pageBtn = document.createElement('button');
-            pageBtn.className = `page-number ${i === currentPage ? 'active' : ''}`;
+            pageBtn.className = `page-number ${i === usersCurrentPage ? 'active' : ''}`;
             pageBtn.textContent = i;
-            pageBtn.onclick = () => goToPage(i);
+            pageBtn.onclick = () => usersGoToPage(i);
             pageNumbers.appendChild(pageBtn);
         }
     }
 }
 
 // Ir para página específica
-function goToPage(page) {
-    if (page >= 1 && page <= totalPages && page !== currentPage) {
-        currentPage = page;
+function usersGoToPage(page) {
+    if (page >= 1 && page <= usersTotalPages && page !== usersCurrentPage) {
+        usersCurrentPage = page;
         renderUsersTable();
     }
 }
 
 // Ir para página anterior
-function goToPreviousPage() {
-    if (currentPage > 1) {
-        goToPage(currentPage - 1);
+function usersGoToPreviousPage() {
+    if (usersCurrentPage > 1) {
+        usersGoToPage(usersCurrentPage - 1);
     }
 }
 
 // Ir para próxima página
-function goToNextPage() {
-    if (currentPage < totalPages) {
-        goToPage(currentPage + 1);
+function usersGoToNextPage() {
+    if (usersCurrentPage < usersTotalPages) {
+        usersGoToPage(usersCurrentPage + 1);
     }
 }
 
 // Ir para primeira página
-function goToFirstPage() {
-    goToPage(1);
+function usersGoToFirstPage() {
+    usersGoToPage(1);
 }
 
 // Ir para última página
-function goToLastPage() {
-    goToPage(totalPages);
+function usersGoToLastPage() {
+    usersGoToPage(usersTotalPages);
 }
 
 // Atualizar filtros de usuários

@@ -5,31 +5,44 @@ let currentUserId = null;
 
 // Inicializar Supabase quando a página carregar
 document.addEventListener('DOMContentLoaded', async () => {
-    if (typeof supabase !== 'undefined' && isSupabaseConfigured()) {
-        try {
+    try {
+        const configured = typeof isSupabaseConfigured === 'function' ? isSupabaseConfigured() : false;
+        if (configured && typeof initSupabase === 'function') {
             supabaseInitialized = initSupabase();
-            if (supabaseInitialized && isOnline()) {
-                isSupabaseOnline = true;
-                
-                // Obter usuário atual
+        }
+
+        const mode = typeof getOperationMode === 'function'
+            ? getOperationMode()
+            : (navigator.onLine ? 'local' : 'offline');
+
+        if (mode === 'online' && supabaseInitialized) {
+            isSupabaseOnline = true;
+
+            // Obter usuário atual
+            try {
                 const { data: { session } } = await supabaseClient.auth.getSession();
                 if (session) {
                     currentUserId = session.user.id;
                 }
-                
-                console.log('🟢 SCM rodando em modo ONLINE (Supabase)');
-                showConnectionStatus('online');
-            } else {
-                console.log('🔴 SCM rodando em modo OFFLINE (IndexedDB)');
-                showConnectionStatus('offline');
+            } catch (err) {
+                console.warn('⚠️ Não foi possível obter sessão do usuário:', err);
             }
-        } catch (error) {
-            console.error('❌ Erro ao inicializar Supabase:', error);
+
+            console.log('🟢 SCM rodando em modo ONLINE (Supabase)');
+            showConnectionStatus('online');
+        } else if (mode === 'offline') {
+            isSupabaseOnline = false;
+            console.log('🔴 SCM rodando em modo OFFLINE (IndexedDB)');
             showConnectionStatus('offline');
+        } else {
+            isSupabaseOnline = false;
+            console.log('⚪ SCM rodando em modo LOCAL (IndexedDB)');
+            showConnectionStatus('local');
         }
-    } else {
-        console.log('⚪ SCM rodando em modo LOCAL (IndexedDB)');
-        showConnectionStatus('local');
+    } catch (error) {
+        console.error('❌ Erro ao inicializar Supabase:', error);
+        isSupabaseOnline = false;
+        showConnectionStatus('offline');
     }
 });
 
@@ -58,12 +71,60 @@ function showConnectionStatus(status) {
     }
 }
 
+// Utilitário: valida UUID v4
+function isValidUUID(id) {
+    return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(id));
+}
+
+// Indicador visual de sincronização (no cabeçalho)
+function updateSyncStatus(state, message = '') {
+    const header = document.querySelector('h1');
+    if (!header) return;
+    let syncIndicator = header.querySelector('.sync-status');
+    if (!syncIndicator) {
+        syncIndicator = document.createElement('span');
+        syncIndicator.className = 'sync-status';
+        header.appendChild(syncIndicator);
+    }
+    let content = '';
+    switch (state) {
+        case 'syncing':
+            content = '<span style="color: #ffc107; font-size: 1.2em;" title="' + (message || 'Sincronizando...') + '">🟡</span>';
+            break;
+        case 'done':
+            content = '<span style="color: #28a745; font-size: 1.2em;" title="' + (message || 'Sincronização concluída') + '">✅</span>';
+            break;
+        case 'error':
+            content = '<span style="color: #dc3545; font-size: 1.2em;" title="' + (message || 'Erro na sincronização') + '">⚠️</span>';
+            break;
+        default:
+            content = '';
+    }
+    syncIndicator.innerHTML = content;
+}
+
 // Verificar status online/offline
 window.addEventListener('online', () => {
-    if (supabaseInitialized) {
-        isSupabaseOnline = true;
-        showConnectionStatus('online');
-        console.log('🟢 Conexão restaurada - modo ONLINE');
+    const mode = typeof getOperationMode === 'function' ? getOperationMode() : 'online';
+    isSupabaseOnline = mode === 'online' && supabaseInitialized;
+    showConnectionStatus(isSupabaseOnline ? 'online' : 'local');
+    console.log(isSupabaseOnline ? '🟢 Conexão restaurada - modo ONLINE' : '⚪ Conexão restaurada - modo LOCAL');
+
+    // Disparar sincronização automática ao recuperar conexão se estivermos realmente online (Supabase)
+    if (isSupabaseOnline) {
+        (async () => {
+            try {
+                updateSyncStatus('syncing', 'Sincronizando com Supabase...');
+                if (typeof syncLocalToSupabase === 'function') {
+                    await syncLocalToSupabase();
+                }
+                await syncToLocalDB(false);
+                updateSyncStatus('done', 'Sincronização concluída');
+            } catch (err) {
+                console.error('Erro na sincronização pós-reconexão:', err);
+                updateSyncStatus('error', 'Falha na sincronização');
+            }
+        })();
     }
 });
 
@@ -74,24 +135,105 @@ window.addEventListener('offline', () => {
 });
 
 // Sincronizar dados do Supabase com IndexedDB local
-async function syncToLocalDB() {
+async function syncToLocalDB(forceFullSync = false) {
     try {
-        // Limpar dados locais
-        await clearAllData();
+        const lastSyncTimestamp = localStorage.getItem('lastSyncTimestamp');
+        const currentTimestamp = Date.now();
         
-        // Salvar produtos no IndexedDB
-        for (const product of products) {
-            await addProduct(product);
+        // Mostrar notificação de início
+        updateSyncStatus('syncing', 'Sincronizando dados do Supabase...');
+        if (typeof showInfoToast === 'function') {
+            showInfoToast('Sincronizando dados...', 2000);
         }
         
-        // Salvar movimentações no IndexedDB
-        for (const movement of movements) {
-            await addMovement(movement);
+        // Se última sincronização foi há menos de 5 minutos e não é forçada
+        if (lastSyncTimestamp && !forceFullSync && 
+            (currentTimestamp - parseInt(lastSyncTimestamp) < 5 * 60 * 1000)) {
+            console.log('🔄 Usando dados em cache (última sincronização recente)');
+            
+            if (typeof showInfoToast === 'function') {
+                showInfoToast('Usando dados em cache (sincronização recente)', 2000);
+            }
+            updateSyncStatus('done', 'Dados atualizados (cache)');
+            return;
         }
         
-        console.log('🔄 Dados sincronizados com IndexedDB local');
+        // Sincronizar apenas dados alterados desde a última sincronização
+        if (lastSyncTimestamp && !forceFullSync) {
+            const lastSync = new Date(parseInt(lastSyncTimestamp)).toISOString();
+            
+            // Buscar apenas produtos alterados
+            const { data: updatedProducts } = await supabaseClient
+                .from('products')
+                .select('*')
+                .gt('updated_at', lastSync);
+                
+            // Atualizar apenas produtos modificados
+            for (const product of updatedProducts || []) {
+                await updateProduct({
+                    id: product.id,
+                    name: product.name,
+                    description: product.description || '',
+                    type: product.type,
+                    quantity: product.quantity,
+                    minQuantity: product.min_quantity,
+                    unit: product.unit
+                });
+            }
+
+            updateSyncStatus('done', 'Produtos sincronizados');
+        
+            // Buscar movimentações novas
+            const { data: newMovements } = await supabaseClient
+                .from('movements')
+                .select('*')
+                .gt('created_at', lastSync);
+                
+            // Adicionar novas movimentações
+            for (const movement of newMovements || []) {
+                await addMovement({
+                    id: movement.id,
+                    productId: movement.product_id,
+                    type: movement.type,
+                    quantity: movement.quantity,
+                    timestamp: movement.timestamp,
+                    description: movement.description || ''
+                });
+            }
+            
+            console.log(`🔄 Sincronização incremental concluída: ${updatedProducts?.length || 0} produtos, ${newMovements?.length || 0} movimentações`);
+            
+            if (typeof showSuccessToast === 'function') {
+                showSuccessToast(`Sincronização concluída: ${updatedProducts?.length || 0} produtos atualizados`);
+            }
+        } else {
+            // Sincronização completa
+            await clearAllData();
+            
+            // Salvar produtos no IndexedDB
+            for (const product of products) {
+                await addProduct(product);
+            }
+            
+            // Salvar movimentações no IndexedDB
+            for (const movement of movements) {
+                await addMovement(movement);
+            }
+            
+            console.log('🔄 Sincronização completa concluída');
+            
+            if (typeof showSuccessToast === 'function') {
+                showSuccessToast('Sincronização completa concluída');
+            }
+        }
+        
+        localStorage.setItem('lastSyncTimestamp', currentTimestamp.toString());
     } catch (error) {
         console.error('❌ Erro ao sincronizar com IndexedDB:', error);
+        
+        if (typeof showErrorToast === 'function') {
+            showErrorToast('Erro ao sincronizar dados: ' + error.message);
+        }
     }
 }
 
@@ -319,8 +461,13 @@ async function loadDataFromDB() {
     
     // Cache inválido - carregar do banco
     try {
+        // Determinar modo operacional
+        const mode = typeof getOperationMode === 'function'
+            ? getOperationMode()
+            : (navigator.onLine ? 'local' : 'offline');
+
         // Tentar carregar do Supabase primeiro se online
-        if (isSupabaseOnline && supabaseInitialized) {
+        if (mode === 'online' && supabaseInitialized && typeof supabaseClient !== 'undefined') {
             console.log('🌐 Carregando do Supabase...');
             try {
                 const { data: supabaseProducts, error: productsError } = await supabaseClient
@@ -621,8 +768,11 @@ async function handleProductSubmit(e) {
             if (index !== -1) {
                 products[index] = product;
                 
-                // Salvar no Supabase se online
-                if (isSupabaseOnline && supabaseInitialized) {
+                // Salvar no Supabase se modo ONLINE
+                const mode = typeof getOperationMode === 'function'
+                    ? getOperationMode()
+                    : (navigator.onLine ? 'local' : 'offline');
+                if (mode === 'online' && supabaseInitialized) {
                     try {
                         const { error } = await supabaseClient
                             .from('products')
@@ -652,27 +802,40 @@ async function handleProductSubmit(e) {
             // Adicionar novo produto
             products.push(product);
             
-            // Salvar no Supabase se online
-            if (isSupabaseOnline && supabaseInitialized) {
+            // Salvar no Supabase se modo ONLINE
+            const mode = typeof getOperationMode === 'function'
+                ? getOperationMode()
+                : (navigator.onLine ? 'local' : 'offline');
+            if (mode === 'online' && supabaseInitialized) {
                 try {
-                    const { error } = await supabaseClient
+                    const payload = {
+                        name: product.name,
+                        description: product.description,
+                        type: product.type,
+                        quantity: product.quantity,
+                        min_quantity: product.minQuantity,
+                        unit: product.unit,
+                        created_by: currentUserId,
+                        updated_by: currentUserId,
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString()
+                    };
+                    // Apenas envia o ID se já for um UUID válido
+                    if (isValidUUID(product.id)) {
+                        payload.id = product.id;
+                    }
+
+                    const { data: inserted, error } = await supabaseClient
                         .from('products')
-                        .insert({
-                            id: product.id,
-                            name: product.name,
-                            description: product.description,
-                            type: product.type,
-                            quantity: product.quantity,
-                            min_quantity: product.minQuantity,
-                            unit: product.unit,
-                            created_by: currentUserId,
-                            updated_by: currentUserId,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        });
-                    
+                        .insert(payload)
+                        .select('*');
+
                     if (error) throw error;
-                    console.log('✅ Produto salvo no Supabase');
+                    // Se o ID não era UUID, refletir o ID gerado pelo banco
+                    if (!isValidUUID(product.id) && inserted && inserted[0] && inserted[0].id) {
+                        product.id = inserted[0].id;
+                    }
+                    console.log('✅ Produto salvo no Supabase', inserted ? inserted[0] : '');
                 } catch (error) {
                     console.error('❌ Erro ao salvar no Supabase:', error);
                 }
@@ -750,8 +913,11 @@ async function deleteProductFromSystem(id) {
     if (!confirm('Tem certeza que deseja excluir este material?')) return;
     
     try {
-        // Excluir do Supabase se online
-        if (isSupabaseOnline && supabaseInitialized) {
+        // Excluir do Supabase se modo ONLINE
+        const mode = typeof getOperationMode === 'function'
+            ? getOperationMode()
+            : (navigator.onLine ? 'local' : 'offline');
+        if (mode === 'online' && supabaseInitialized) {
             try {
                 // Excluir movimentações primeiro (devido à foreign key)
                 const { error: movementsError } = await supabaseClient
@@ -1432,17 +1598,25 @@ async function handleMovementSubmit(e) {
         // Salvar movimentação no Supabase se online
         if (isSupabaseOnline && supabaseInitialized) {
             try {
-                const { error: movementError } = await supabaseClient
+                const movementPayload = {
+                    product_id: movement.productId,
+                    type: movement.type,
+                    quantity: movement.quantity,
+                    timestamp: movement.timestamp
+                };
+                if (isValidUUID(movement.id)) {
+                    movementPayload.id = movement.id;
+                }
+
+                const { data: movementInserted, error: movementError } = await supabaseClient
                     .from('movements')
-                    .insert({
-                        id: movement.id,
-                        product_id: movement.productId,
-                        type: movement.type,
-                        quantity: movement.quantity,
-                        timestamp: movement.timestamp
-                    });
-                
+                    .insert(movementPayload)
+                    .select('*');
+
                 if (movementError) throw movementError;
+                if (!isValidUUID(movement.id) && movementInserted && movementInserted[0] && movementInserted[0].id) {
+                    movement.id = movementInserted[0].id;
+                }
                 
                 // Atualizar produto no Supabase também
                 const { error: productError } = await supabaseClient
@@ -1455,7 +1629,7 @@ async function handleMovementSubmit(e) {
                 
                 if (productError) throw productError;
                 
-                console.log('✅ Movimentação salva no Supabase');
+                console.log('✅ Movimentação salva no Supabase', movementInserted ? movementInserted[0] : '');
             } catch (error) {
                 console.error('❌ Erro ao salvar movimentação no Supabase:', error);
             }

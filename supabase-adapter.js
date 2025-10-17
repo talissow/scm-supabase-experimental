@@ -1,6 +1,11 @@
 // ===== ADAPTER SUPABASE =====
 // Funções para integrar com Supabase (substitui db.js)
 
+// Utilitário: validar UUID v4
+function isValidUUID(id) {
+    return typeof id === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+}
+
 // ===== PRODUTOS =====
 
 async function getAllProductsSupabase() {
@@ -30,19 +35,32 @@ async function getAllProductsSupabase() {
 
 async function addProductSupabase(product) {
     try {
-        const { error } = await supabaseClient
+        const payload = {
+            name: product.name,
+            description: product.description || '',
+            type: product.type,
+            quantity: product.quantity,
+            min_quantity: product.minQuantity,
+            unit: product.unit
+        };
+
+        // Usar ID apenas se for UUID válido; caso contrário, deixar o banco gerar
+        if (isValidUUID(product.id)) {
+            payload.id = product.id;
+        }
+
+        const { data, error } = await supabaseClient
             .from('products')
-            .insert([{
-                id: product.id,
-                name: product.name,
-                description: product.description || '',
-                type: product.type,
-                quantity: product.quantity,
-                min_quantity: product.minQuantity,
-                unit: product.unit
-            }]);
-        
+            .insert([payload])
+            .select();
+
         if (error) throw error;
+
+        // Se o banco gerou um novo ID, refletir no objeto local
+        if (data && data.length > 0 && (!product.id || !isValidUUID(product.id))) {
+            product.id = data[0].id;
+        }
+
         console.log('✅ Produto adicionado no Supabase');
     } catch (error) {
         console.error('Erro ao adicionar produto:', error);
@@ -113,18 +131,29 @@ async function getAllMovementsSupabase() {
 
 async function addMovementSupabase(movement) {
     try {
-        const { error } = await supabaseClient
+        const payload = {
+            product_id: movement.productId,
+            type: movement.type,
+            quantity: movement.quantity,
+            timestamp: movement.timestamp
+        };
+
+        if (isValidUUID(movement.id)) {
+            payload.id = movement.id;
+        }
+
+        const { data, error } = await supabaseClient
             .from('movements')
-            .insert([{
-                id: movement.id,
-                product_id: movement.productId,
-                type: movement.type,
-                quantity: movement.quantity,
-                timestamp: movement.timestamp
-            }]);
-        
+            .insert([payload])
+            .select();
+
         if (error) throw error;
-        console.log('✅ Movimentação registrada no Supabase');
+
+        if (data && data.length > 0 && (!movement.id || !isValidUUID(movement.id))) {
+            movement.id = data[0].id;
+        }
+
+        console.log('✅ Movimentação registrado no Supabase');
     } catch (error) {
         console.error('Erro ao adicionar movimentação:', error);
         throw error;
@@ -195,8 +224,16 @@ async function saveProduct(product) {
 // ===== SINCRONIZAÇÃO =====
 
 async function syncLocalToSupabase() {
+    // Proteger execução por modo operacional e inicialização
+    const mode = typeof getOperationMode === 'function'
+        ? getOperationMode()
+        : (navigator.onLine ? 'local' : 'offline');
+    if (mode !== 'online' || typeof supabaseClient === 'undefined' || !supabaseInitialized) {
+        console.log('⚪ Modo não ONLINE ou Supabase não inicializado. Pulando sync local → Supabase.');
+        return;
+    }
+
     console.log('🔄 Sincronizando dados locais → Supabase...');
-    
     try {
         // Buscar dados locais
         const localProducts = await getAllProducts();
@@ -218,8 +255,16 @@ async function syncLocalToSupabase() {
 }
 
 async function syncSupabaseToLocal() {
+    // Proteger execução por modo operacional e inicialização
+    const mode = typeof getOperationMode === 'function'
+        ? getOperationMode()
+        : (navigator.onLine ? 'local' : 'offline');
+    if (mode !== 'online' || typeof supabaseClient === 'undefined' || !supabaseInitialized) {
+        console.log('⚪ Modo não ONLINE ou Supabase não inicializado. Pulando sync Supabase → local.');
+        return;
+    }
+
     console.log('🔄 Sincronizando Supabase → dados locais...');
-    
     try {
         // Buscar do Supabase
         const cloudProducts = await getAllProductsSupabase();

@@ -1,6 +1,6 @@
 // ===== MÓDULO DE AUTENTICAÇÃO SUPABASE =====
 let currentUser = null;
-let isAuthenticated = false;
+let authIsAuthenticated = false;
 
 // Inicializar autenticação
 async function initAuth() {
@@ -20,7 +20,7 @@ async function initAuth() {
 
         if (session) {
             currentUser = session.user;
-            isAuthenticated = true;
+            authIsAuthenticated = true;
             console.log('✅ Usuário autenticado:', currentUser.email);
             
             // Verificar se usuário existe na tabela users
@@ -59,7 +59,7 @@ async function login(email, password) {
         }
 
         currentUser = data.user;
-        isAuthenticated = true;
+        authIsAuthenticated = true;
         
         // Verificar se usuário existe na tabela users
         await ensureUserProfile();
@@ -84,7 +84,7 @@ async function logout() {
         }
 
         currentUser = null;
-        isAuthenticated = false;
+        authIsAuthenticated = false;
         
         console.log('✅ Logout realizado com sucesso');
         return true;
@@ -200,7 +200,7 @@ function getCurrentUser() {
 
 // Verificar se está autenticado
 function isUserAuthenticated() {
-    return isAuthenticated;
+    return authIsAuthenticated;
 }
 
 // Verificar se usuário é admin
@@ -228,7 +228,7 @@ async function isUserAdmin() {
 
 // Redirecionar para login se não autenticado
 function requireAuth() {
-    if (!isAuthenticated) {
+    if (!authIsAuthenticated) {
         window.location.href = 'login.html';
         return false;
     }
@@ -259,15 +259,16 @@ async function getUserProfile() {
 }
 
 // Escutar mudanças de autenticação
-supabaseClient?.auth.onAuthStateChange((event, session) => {
+// Evitar ReferenceError quando supabaseClient não está declarado
+(window.supabaseClient)?.auth?.onAuthStateChange((event, session) => {
     console.log('🔄 Estado de autenticação mudou:', event);
     
     if (event === 'SIGNED_IN') {
         currentUser = session.user;
-        isAuthenticated = true;
+        authIsAuthenticated = true;
     } else if (event === 'SIGNED_OUT') {
         currentUser = null;
-        isAuthenticated = false;
+        authIsAuthenticated = false;
     }
 });
 

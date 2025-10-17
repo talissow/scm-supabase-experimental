@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciador de Banco de Dados - SCM</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Supabase JS SDK -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- Configuração do Supabase -->
+    <script src="supabase-config.js"></script>
+    <style>
+        .github-status {
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+        .github-status.connected {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+        }
+        .github-status.disconnected {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .table-card {
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+        }
+        .table-card .card-header {
+            background-color: #f8f9fa;
+            padding: 10px 15px;
+        }
+        .toast-container {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1050;
+        }
+        .query-editor {
+            font-family: monospace;
+            height: 150px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container mt-4">
+        <div class="row mb-4">
+            <div class="col-12">
+                <h1>🛠️ Gerenciador de Banco de Dados</h1>
+                <p class="lead">Gerencie seu banco de dados Supabase e integre com GitHub</p>
+            </div>
+        </div>
+
+        <!-- Toast Container -->
+        <div class="toast-container"></div>
+        
+        <div class="row">
+            <!-- Sidebar -->
+            <div class="col-md-3">
+                <div class="card mb-4">
+                    <div class="card-header">
+                        <h5>Conexão</h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="supabase-status">
+                            <div class="d-flex align-items-center mb-2">
+                                <div class="spinner-border spinner-border-sm me-2" role="status">
+                                    <span class="visually-hidden">Carregando...</span>
+                                </div>
+                                <span>Verificando conexão...</span>
+                            </div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div id="github-status">
+                            <div class="mb-3">
+                                <label for="github-username" class="form-label">Usuário GitHub</label>
+                                <div class="input-group">
+                                    <input type="text" class="form-control" id="github-username" placeholder="Seu usuário">
+                                    <button class="btn btn-primary" onclick="connectGitHub()">Conectar</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Tabelas</h5>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="list-group list-group-flush" id="table-list">
+                            <a href="#" class="list-group-item list-group-item-action" onclick="showTable('produtos')">produtos</a>
+                            <a href="#" class="list-group-item list-group-item-action" onclick="showTable('movimentos')">movimentos</a>
+                            <a href="#" class="list-group-item list-group-item-action" onclick="showTable('usuarios')">usuarios</a>
+                            <a href="#" class="list-group-item list-group-item-action" onclick="showTable('configuracoes')">configuracoes</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Main Content -->
+            <div class="col-md-9">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 id="current-table-title">Selecione uma tabela</h5>
+                        <div>
+                            <button class="btn btn-sm btn-outline-primary" onclick="refreshCurrentTable()">🔄 Atualizar</button>
+                            <button class="btn btn-sm btn-outline-success" onclick="syncWithGitHub()">🔗 Sincronizar com GitHub</button>
+                        </div>
+                    </div>
+                    <div class="card-body" id="table-structure">
+                        <p class="text-center text-muted">Selecione uma tabela para ver sua estrutura</p>
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Consulta SQL Personalizada</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <textarea class="form-control query-editor" id="sql-query" placeholder="Digite sua consulta SQL aqui..."></textarea>
+                        </div>
+                        <div class="d-flex justify-content-between">
+                            <div>
+                                <button class="btn btn-primary" onclick="executeQuery()">▶️ Executar</button>
+                                <button class="btn btn-outline-secondary" onclick="clearQuery()">🧹 Limpar</button>
+                            </div>
+                            <div>
+                                <button class="btn btn-outline-warning" onclick="loadQueryTemplate('select')">SELECT</button>
+                                <button class="btn btn-outline-warning" onclick="loadQueryTemplate('insert')">INSERT</button>
+                                <button class="btn btn-outline-warning" onclick="loadQueryTemplate('update')">UPDATE</button>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4" id="query-results">
+                            <!-- Resultados da consulta aparecerão aqui -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="d-flex justify-content-between">
+                    <a href="SCM_Supabase.html" class="btn btn-secondary">← Voltar ao Sistema</a>
+                    <button class="btn btn-success" onclick="deployToVercel()">🚀 Deploy para Vercel</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="supabase-config.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="toast-notifications.js"></script>
+    <script src="github-integration.js"></script>
+    <script src="supabase-manager.js"></script>
+    <script src="vercel-deploy.js"></script>
+    
+    <script>
+        // Inicialização
+        let supabase;
+        let currentTable = null;
+        
+        document.addEventListener('DOMContentLoaded', async function() {
+            // Inicializa toast notifications
+            initToastSystem();
+            
+            // Inicializa Vercel Deploy
+            VERCEL_DEPLOY.init();
+            
+            // Inicializa Supabase
+            try {
+                supabase = supabaseClient = supabase.createClient(
+                    SUPABASE_CONFIG.url,
+                    SUPABASE_CONFIG.anonKey
+                );
+                
+                // Verifica conexão
+                const { data, error } = await supabase.from('produtos').select('id').limit(1);
+                
+                if (error) throw error;
+                
+                // Atualiza status
+                document.getElementById('supabase-status').innerHTML = `
+                    <div class="alert alert-success mb-0">
+                        <strong>✅ Conectado ao Supabase</strong>
+                        <p class="mb-0 small">${SUPABASE_CONFIG.url}</p>
+                    </div>
+                `;
+                
+                // Inicializa gerenciador
+                SUPABASE_MANAGER.init();
+                
+                showSuccessToast('Conectado ao banco de dados Supabase');
+            } catch (error) {
+                console.error('Erro ao conectar ao Supabase:', error);
+                
+                document.getElementById('supabase-status').innerHTML = `
+                    <div class="alert alert-danger mb-0">
+                        <strong>❌ Erro de conexão</strong>
+                        <p class="mb-0 small">${error.message || 'Verifique suas credenciais'}</p>
+                    </div>
+                `;
+                
+                showErrorToast('Falha ao conectar ao Supabase');
+            }
+        });
+        
+        // Conecta ao GitHub
+        function connectGitHub() {
+            const username = document.getElementById('github-username').value.trim();
+            
+            if (!username) {
+                showWarningToast('Digite seu nome de usuário do GitHub');
+                return;
+            }
+            
+            // Inicializa integração com GitHub
+            GITHUB_INTEGRATION.init(username);
+            
+            // Atualiza UI
+            document.getElementById('github-status').innerHTML = GITHUB_INTEGRATION.getStatusHTML();
+            
+            showSuccessToast(`Conectado ao GitHub como ${username}`);
+        }
+        
+        // Mostra estrutura da tabela
+        async function showTable(tableName) {
+            currentTable = tableName;
+            document.getElementById('current-table-title').textContent = `Tabela: ${tableName}`;
+            
+            const tableStructureElement = document.getElementById('table-structure');
+            tableStructureElement.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Carregando estrutura...</p></div>';
+            
+            await SUPABASE_MANAGER.renderTableStructure(tableName, tableStructureElement);
+        }
+        
+        // Atualiza tabela atual
+        function refreshCurrentTable() {
+            if (currentTable) {
+                showTable(currentTable);
+            } else {
+                showWarningToast('Selecione uma tabela primeiro');
+            }
+        }
+        
+        // Sincroniza com GitHub
+        async function syncWithGitHub() {
+            if (!currentTable) {
+                showWarningToast('Selecione uma tabela primeiro');
+                return;
+            }
+            
+            if (!GITHUB_INTEGRATION.status.connected) {
+                showWarningToast('Conecte-se ao GitHub primeiro');
+                return;
+            }
+            
+            const result = await SUPABASE_MANAGER.syncTableWithGithub(currentTable);
+            
+            if (result.success) {
+                showSuccessToast(`Tabela ${currentTable} sincronizada com GitHub`);
+            } else {
+                showErrorToast(`Erro ao sincronizar: ${result.error}`);
+            }
+        }
+        
+        // Executa consulta SQL
+        async function executeQuery() {
+            const query = document.getElementById('sql-query').value.trim();
+            
+            if (!query) {
+                showWarningToast('Digite uma consulta SQL');
+                return;
+            }
+            
+            const resultsElement = document.getElementById('query-results');
+            resultsElement.innerHTML = '<div class="text-center"><div class="spinner-border" role="status"></div><p>Executando consulta...</p></div>';
+            
+            try {
+                const result = await SUPABASE_MANAGER.executeQuery(query);
+                
+                if (result.success) {
+                    // Formata resultados como tabela
+                    if (Array.isArray(result.data) && result.data.length > 0) {
+                        const columns = Object.keys(result.data[0]);
+                        
+                        resultsElement.innerHTML = `
+                            <div class="alert alert-success">Consulta executada com sucesso</div>
+                            <div class="table-responsive">
+                                <table class="table table-striped table-sm">
+                                    <thead>
+                                        <tr>
+                                            ${columns.map(col => `<th>${col}</th>`).join('')}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        ${result.data.map(row => `
+                                            <tr>
+                                                ${columns.map(col => `<td>${row[col] !== null ? row[col] : '<em>null</em>'}</td>`).join('')}
+                                            </tr>
+                                        `).join('')}
+                                    </tbody>
+                                </table>
+                            </div>
+                            <p class="text-muted">${result.data.length} registro(s) encontrado(s)</p>
+                        `;
+                    } else {
+                        resultsElement.innerHTML = `
+                            <div class="alert alert-success">
+                                Consulta executada com sucesso
+                                ${result.data ? `<pre>${JSON.stringify(result.data, null, 2)}</pre>` : ''}
+                            </div>
+                        `;
+                    }
+                    
+                    showSuccessToast('Consulta executada com sucesso');
+                } else {
+                    resultsElement.innerHTML = `
+                        <div class="alert alert-danger">
+                            <strong>Erro ao executar consulta:</strong>
+                            <p>${result.error}</p>
+                        </div>
+                    `;
+                    
+                    showErrorToast('Erro ao executar consulta');
+                }
+            } catch (error) {
+                resultsElement.innerHTML = `
+                    <div class="alert alert-danger">
+                        <strong>Erro ao executar consulta:</strong>
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                
+                showErrorToast('Erro ao executar consulta');
+            }
+        }
+        
+        // Limpa editor de consulta
+        function clearQuery() {
+            document.getElementById('sql-query').value = '';
+            document.getElementById('query-results').innerHTML = '';
+        }
+        
+        // Carrega template de consulta
+        function loadQueryTemplate(type) {
+            if (!currentTable) {
+                showWarningToast('Selecione uma tabela primeiro');
+                return;
+            }
+            
+            const queryEditor = document.getElementById('sql-query');
+            
+            switch (type) {
+                case 'select':
+                    queryEditor.value = `SELECT * FROM ${currentTable} LIMIT 10;`;
+                    break;
+                case 'insert':
+                    queryEditor.value = `INSERT INTO ${currentTable} (coluna1, coluna2) VALUES ('valor1', 'valor2');`;
+                    break;
+                case 'update':
+                    queryEditor.value = `UPDATE ${currentTable} SET coluna1 = 'novo_valor' WHERE id = 'id_do_registro';`;
+                    break;
+            }
+        }
+        
+        // Deploy para Vercel
+        function deployToVercel() {
+            if (!GITHUB_INTEGRATION.status.connected) {
+                showWarningToast('Conecte-se ao GitHub primeiro');
+                return;
+            }
+            
+            // Usa o módulo de deploy do Vercel
+            VERCEL_DEPLOY.startDeploy('Deploy via Database Admin');
+        }
+    </script>
+</body>
+</html>

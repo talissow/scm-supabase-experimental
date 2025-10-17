@@ -678,7 +678,7 @@
                         <option value="true">Ativo</option>
                         <option value="false">Inativo</option>
                     </select>
-                    <select id="itemsPerPage" onchange="changeItemsPerPage()">
+                    <select id="usersItemsPerPage" onchange="usersChangeItemsPerPage()">
                         <option value="10" selected>10 por página</option>
                         <option value="25">25 por página</option>
                         <option value="50">50 por página</option>
@@ -706,18 +706,18 @@
                 <!-- Controles de Paginação -->
                 <div class="pagination-controls">
                     <div class="pagination-info">
-                        <span id="paginationInfo">Mostrando 0 de 0 usuários</span>
+                        <span id="usersPaginationInfo">Mostrando 0 de 0 usuários</span>
                     </div>
                     <div class="pagination-buttons">
-                        <button id="firstPage" onclick="goToFirstPage()" class="btn btn-sm btn-secondary" disabled>⏮️ Primeira</button>
-                        <button id="prevPage" onclick="goToPreviousPage()" class="btn btn-sm btn-secondary" disabled>◀️ Anterior</button>
+                        <button id="usersFirstPage" onclick="usersGoToFirstPage()" class="btn btn-sm btn-secondary" disabled>⏮️ Primeira</button>
+                        <button id="usersPrevPage" onclick="usersGoToPreviousPage()" class="btn btn-sm btn-secondary" disabled>◀️ Anterior</button>
                         
-                        <div class="page-numbers" id="pageNumbers">
+                        <div class="page-numbers" id="usersPageNumbers">
                             <!-- Números das páginas serão inseridos aqui -->
                         </div>
                         
-                        <button id="nextPage" onclick="goToNextPage()" class="btn btn-sm btn-secondary" disabled>Próxima ▶️</button>
-                        <button id="lastPage" onclick="goToLastPage()" class="btn btn-sm btn-secondary" disabled>Última ⏭️</button>
+                        <button id="usersNextPage" onclick="usersGoToNextPage()" class="btn btn-sm btn-secondary" disabled>Próxima ▶️</button>
+                        <button id="usersLastPage" onclick="usersGoToLastPage()" class="btn btn-sm btn-secondary" disabled>Última ⏭️</button>
                     </div>
                 </div>
             </div>
@@ -801,16 +801,19 @@
     <input type="file" id="fileInput" style="display: none;" accept=".json,.csv,.xlsx">
 
     <script src="db.js"></script>
-    <script src="supabase-config.js"></script>
     <script src="supabase-adapter.js"></script>
     <script src="security.js"></script>
     <script src="router.js"></script>
-    <script src="auth-guard.js"></script>
     <script src="app.js"></script>
     <script src="init-admin.js"></script>
     <script src="admin-panel.js"></script>
     <script src="user-manager.js"></script>
     <script src="check-users.js"></script>
+    <script src="pagination.js"></script>
+<script src="toast-notifications.js"></script>
+<script src="cache-manager.js"></script>
+<script src="stock-alerts.js"></script>
+<script src="integration.js"></script>
     
     <!-- Script de autenticação -->
     <script>

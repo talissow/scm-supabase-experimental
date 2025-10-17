@@ -57,7 +57,7 @@ function isPublicPage() {
 }
 
 // Verificar se o usuário está autenticado
-async function isAuthenticated() {
+async function guardIsAuthenticated() {
     try {
         // Verificar se Supabase está inicializado
         if (typeof supabaseClient === 'undefined' || !supabaseClient) {
@@ -117,7 +117,7 @@ async function protectPage() {
             console.log('⚠️ Possível acesso direto detectado');
         }
         
-        const authenticated = await isAuthenticated();
+        const authenticated = await guardIsAuthenticated();
         
         if (!authenticated) {
             console.log('❌ Usuário não autenticado - redirecionando para login');
@@ -210,7 +210,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 // Exportar funções para uso em outros scripts
 window.AuthGuard = {
-    isAuthenticated,
+    isAuthenticated: guardIsAuthenticated,
     protectPage,
     redirectToLogin,
     isProtectedPage,
