@@ -121,6 +121,7 @@ async function getAllMovementsSupabase() {
             productId: m.product_id,
             type: m.type,
             quantity: m.quantity,
+            destination: m.destination,
             timestamp: m.timestamp
         }));
     } catch (error) {
@@ -135,6 +136,7 @@ async function addMovementSupabase(movement) {
             product_id: movement.productId,
             type: movement.type,
             quantity: movement.quantity,
+            destination: movement.destination,
             timestamp: movement.timestamp
         };
 

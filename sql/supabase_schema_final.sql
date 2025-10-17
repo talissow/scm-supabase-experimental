@@ -34,6 +34,7 @@ CREATE TABLE IF NOT EXISTS public.movements (
     product_id UUID NOT NULL REFERENCES public.products(id) ON DELETE CASCADE,
     type VARCHAR(50) NOT NULL CHECK (type IN ('entrada', 'saida', 'ajuste')),
     quantity INTEGER NOT NULL,
+    destination VARCHAR(255),
     reason VARCHAR(255),
     notes TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()

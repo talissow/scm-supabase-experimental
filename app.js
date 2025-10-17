@@ -740,6 +740,23 @@ function initEventListeners() {
     
     // Formulário de movimentação
     document.getElementById('movementForm').addEventListener('submit', handleMovementSubmit);
+    
+    // Controlar exibição do campo destino
+    document.querySelectorAll('input[name="movementType"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            const destinationGroup = document.getElementById('destinationGroup');
+            const destinationSelect = document.getElementById('movementDestination');
+            
+            if (this.value === 'saida') {
+                destinationGroup.style.display = 'block';
+                destinationSelect.required = true;
+            } else {
+                destinationGroup.style.display = 'none';
+                destinationSelect.required = false;
+                destinationSelect.value = '';
+            }
+        });
+    });
 }
 
 // ===== CRUD DE PRODUTOS =====
@@ -1558,6 +1575,13 @@ function openMovementModal(productId) {
     document.getElementById('movementQuantity').value = 1;
     document.querySelector('input[name="movementType"][value="entrada"]').checked = true;
     
+    // Resetar campo destino
+    const destinationGroup = document.getElementById('destinationGroup');
+    const destinationSelect = document.getElementById('movementDestination');
+    destinationGroup.style.display = 'none';
+    destinationSelect.required = false;
+    destinationSelect.value = '';
+    
     document.getElementById('movementModal').style.display = 'block';
 }
 
@@ -1567,9 +1591,16 @@ async function handleMovementSubmit(e) {
     const productId = document.getElementById('movementProductId').value;
     const type = document.querySelector('input[name="movementType"]:checked').value;
     const quantity = parseInt(document.getElementById('movementQuantity').value);
+    const destination = document.getElementById('movementDestination').value;
     
     const product = products.find(p => p.id === productId);
     if (!product) return;
+    
+    // Validar destino para saída
+    if (type === 'saida' && !destination) {
+        alert('Por favor, selecione o destino da movimentação.');
+        return;
+    }
     
     // Validar movimentação
     if (!validateMovement(quantity, product.quantity, type, product.name, product.unit)) {
@@ -1590,6 +1621,7 @@ async function handleMovementSubmit(e) {
             productId: productId,
             type: type,
             quantity: quantity,
+            destination: type === 'saida' ? destination : null,
             timestamp: new Date().toISOString()
         };
         
@@ -1680,12 +1712,13 @@ function openHistoryModal(productId) {
                 const date = new Date(m.timestamp);
                 const formattedDate = date.toLocaleString('pt-BR');
                 const typeText = m.type === 'entrada' ? '📥 Entrada' : '📤 Saída';
+                const destinationText = m.destination ? ` → ${m.destination}` : '';
                 const typeClass = m.type === 'entrada' ? 'status-ok' : 'status-low';
                 
                 return `
                     <tr>
                         <td>${formattedDate}</td>
-                        <td><span class="status-badge ${typeClass}">${typeText}</span></td>
+                        <td><span class="status-badge ${typeClass}">${typeText}${destinationText}</span></td>
                         <td>${m.quantity}</td>
                     </tr>
                 `;
