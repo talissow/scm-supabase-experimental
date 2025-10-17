@@ -102,6 +102,20 @@
 
     // ===== BLOQUEAR F12 E ATALHOS =====
     document.addEventListener('keydown', function(e) {
+        // Permitir copiar/colar em campos de formulário
+        const target = e.target;
+        const isFormField = target && (
+            target.tagName === 'INPUT' || 
+            target.tagName === 'TEXTAREA' || 
+            target.tagName === 'SELECT' ||
+            target.contentEditable === 'true'
+        );
+        
+        if (isFormField) {
+            // Permitir todas as operações de texto em campos de formulário
+            return true;
+        }
+        
         // F12
         if (e.keyCode === 123) {
             e.preventDefault();
@@ -137,33 +151,33 @@
             return false;
         }
         
-        // Ctrl+A (Selecionar tudo)
-        if (e.ctrlKey && e.keyCode === 65) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
+        // Ctrl+A (Selecionar tudo) - PERMITIDO para facilitar cadastro
+        // if (e.ctrlKey && e.keyCode === 65) {
+        //     e.preventDefault();
+        //     e.stopPropagation();
+        //     return false;
+        // }
         
-        // Ctrl+C (Copiar)
-        if (e.ctrlKey && e.keyCode === 67) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
+        // Ctrl+C (Copiar) - PERMITIDO para facilitar cadastro
+        // if (e.ctrlKey && e.keyCode === 67) {
+        //     e.preventDefault();
+        //     e.stopPropagation();
+        //     return false;
+        // }
         
-        // Ctrl+V (Colar)
-        if (e.ctrlKey && e.keyCode === 86) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
+        // Ctrl+V (Colar) - PERMITIDO para facilitar cadastro
+        // if (e.ctrlKey && e.keyCode === 86) {
+        //     e.preventDefault();
+        //     e.stopPropagation();
+        //     return false;
+        // }
         
-        // Ctrl+X (Recortar)
-        if (e.ctrlKey && e.keyCode === 88) {
-            e.preventDefault();
-            e.stopPropagation();
-            return false;
-        }
+        // Ctrl+X (Recortar) - PERMITIDO para facilitar cadastro
+        // if (e.ctrlKey && e.keyCode === 88) {
+        //     e.preventDefault();
+        //     e.stopPropagation();
+        //     return false;
+        // }
         
         // Ctrl+P (Imprimir)
         if (e.ctrlKey && e.keyCode === 80) {
@@ -180,10 +194,11 @@
     });
 
     // ===== BLOQUEAR SELEÇÃO DE TEXTO =====
-    document.addEventListener('selectstart', function(e) {
-        e.preventDefault();
-        return false;
-    });
+    // PERMITIDO para facilitar cadastro de materiais
+    // document.addEventListener('selectstart', function(e) {
+    //     e.preventDefault();
+    //     return false;
+    // });
 
     // ===== BLOQUEAR ARRASTAR =====
     document.addEventListener('dragstart', function(e) {
