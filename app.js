@@ -2615,104 +2615,170 @@ function createPDF() {
     return new jsPDF('p', 'mm', 'a4');
 }
 
-// Cabeçalho padrão dos relatórios
+// Cabeçalho melhorado dos relatórios
 function addPDFHeader(doc, title) {
-    // Logo/Título
-    doc.setFontSize(20);
-    doc.setTextColor(40, 40, 40);
-    doc.text('📦 SCM - Controle de Materiais', 105, 20, { align: 'center' });
+    // Fundo do cabeçalho
+    doc.setFillColor(52, 152, 219);
+    doc.rect(0, 0, 210, 50, 'F');
     
-    // Título do relatório
+    // Logo/Título principal
+    doc.setFontSize(18);
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text('📦 SCM - Sistema de Controle de Materiais', 105, 15, { align: 'center' });
+    
+    // Subtítulo
+    doc.setFontSize(12);
+    doc.setTextColor(240, 240, 240);
+    doc.setFont('helvetica', 'normal');
+    doc.text('Relatórios e Gestão de Estoque', 105, 22, { align: 'center' });
+    
+    // Título do relatório específico
     doc.setFontSize(14);
-    doc.setTextColor(80, 80, 80);
-    doc.text(title, 105, 30, { align: 'center' });
+    doc.setTextColor(255, 255, 255);
+    doc.setFont('helvetica', 'bold');
+    doc.text(title, 105, 32, { align: 'center' });
     
     // Data e hora
     doc.setFontSize(10);
-    doc.setTextColor(120, 120, 120);
-    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 105, 37, { align: 'center' });
+    doc.setTextColor(200, 200, 200);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Gerado em: ${new Date().toLocaleString('pt-BR')}`, 105, 40, { align: 'center' });
     
-    // Linha separadora
-    doc.setDrawColor(200, 200, 200);
-    doc.line(15, 42, 195, 42);
+    // Linha separadora elegante
+    doc.setDrawColor(52, 152, 219);
+    doc.setLineWidth(2);
+    doc.line(15, 52, 195, 52);
     
-    return 48; // Retorna a posição Y após o cabeçalho
+    return 58; // Retorna a posição Y após o cabeçalho
 }
 
-// Rodapé padrão
+// Rodapé melhorado
 function addPDFFooter(doc) {
     const pageCount = doc.internal.getNumberOfPages();
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
+        
+        // Linha separadora do rodapé
+        doc.setDrawColor(200, 200, 200);
+        doc.setLineWidth(0.5);
+        doc.line(15, 280, 195, 280);
+        
+        // Informações do rodapé
         doc.setFontSize(9);
-        doc.setTextColor(150, 150, 150);
+        doc.setTextColor(100, 100, 100);
+        doc.setFont('helvetica', 'normal');
         doc.text(
             `Página ${i} de ${pageCount}`,
+            20,
+            285
+        );
+        
+        doc.text(
+            'Desenvolvido por Talishow Tech © 2025',
             105,
             285,
             { align: 'center' }
         );
+        
         doc.text(
-            'Desenvolvido por Talishow Tech © 2025',
-            105,
-            290,
-            { align: 'center' }
+            `SCM v1.2.0 - Sistema de Controle de Materiais`,
+            190,
+            285,
+            { align: 'right' }
         );
     }
 }
 
-// 1. RELATÓRIO COMPLETO
+// 1. RELATÓRIO COMPLETO MELHORADO
 function exportFullReportToPDF() {
     const doc = createPDF();
     let yPos = addPDFHeader(doc, 'Relatório Completo do Estoque');
     
-    // Resumo
-    yPos += 10;
-    doc.setFontSize(12);
-    doc.setTextColor(40, 40, 40);
-    doc.text('📊 Resumo', 15, yPos);
+    // Seção de Resumo com design melhorado
+    yPos += 15;
     
-    yPos += 7;
-    doc.setFontSize(10);
-    doc.setTextColor(80, 80, 80);
-    doc.text(`Total de Materiais: ${products.length}`, 20, yPos);
+    // Fundo da seção de resumo
+    doc.setFillColor(248, 249, 250);
+    doc.rect(15, yPos - 5, 180, 25, 'F');
     
-    yPos += 5;
+    // Título da seção
+    doc.setFontSize(14);
+    doc.setTextColor(52, 152, 219);
+    doc.setFont('helvetica', 'bold');
+    doc.text('📊 Resumo Executivo', 20, yPos);
+    
+    // Estatísticas em colunas
+    yPos += 8;
+    doc.setFontSize(11);
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'normal');
+    
     const totalValue = products.reduce((sum, p) => sum + (p.quantity * (p.cost || 0)), 0);
-    doc.text(`Valor Total: R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 20, yPos);
+    const lowStock = products.filter(p => p.quantity <= p.minQuantity).length;
+    const outOfStock = products.filter(p => p.quantity === 0).length;
+    
+    // Coluna 1
+    doc.text(`📦 Total de Materiais: ${products.length}`, 25, yPos);
+    doc.text(`💰 Valor Total: R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 25, yPos + 5);
+    
+    // Coluna 2
+    doc.text(`⚠️ Estoque Baixo: ${lowStock}`, 110, yPos);
+    doc.text(`❌ Esgotados: ${outOfStock}`, 110, yPos + 5);
+    
+    // Tabela de materiais melhorada
+    yPos += 20;
+    doc.setFontSize(12);
+    doc.setTextColor(52, 152, 219);
+    doc.setFont('helvetica', 'bold');
+    doc.text('📋 Lista Completa de Materiais', 15, yPos);
     
     yPos += 5;
-    const lowStock = products.filter(p => p.quantity <= p.minQuantity).length;
-    doc.text(`Materiais em Estoque Baixo: ${lowStock}`, 20, yPos);
-    
-    // Tabela de materiais
-    yPos += 10;
     doc.autoTable({
         startY: yPos,
-        head: [['Nome', 'Tipo', 'Qtd', 'Un', 'Mín', 'Status']],
+        head: [['Nome do Material', 'Categoria', 'Quantidade', 'Unidade', 'Mínimo', 'Status']],
         body: products.map(p => [
             p.name,
             getTypeName(p.type),
-            p.quantity,
+            p.quantity.toString(),
             p.unit,
-            p.minQuantity,
-            p.quantity === 0 ? 'Esgotado' : 
-            p.quantity <= p.minQuantity ? 'Baixo' : 'OK'
+            p.minQuantity.toString(),
+            p.quantity === 0 ? '❌ Esgotado' : 
+            p.quantity <= p.minQuantity ? '⚠️ Baixo' : '✅ OK'
         ]),
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [52, 152, 219] },
-        alternateRowStyles: { fillColor: [245, 245, 245] },
+        styles: { 
+            fontSize: 9,
+            cellPadding: 4,
+            overflow: 'linebreak',
+            halign: 'left'
+        },
+        headStyles: { 
+            fillColor: [52, 152, 219],
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        alternateRowStyles: { fillColor: [248, 249, 250] },
+        columnStyles: {
+            0: { cellWidth: 60 }, // Nome
+            1: { cellWidth: 30 }, // Tipo
+            2: { cellWidth: 20, halign: 'center' }, // Qtd
+            3: { cellWidth: 20, halign: 'center' }, // Un
+            4: { cellWidth: 20, halign: 'center' }, // Mín
+            5: { cellWidth: 25, halign: 'center' } // Status
+        },
         didParseCell: function(data) {
             if (data.column.index === 5) {
                 const status = data.cell.raw;
-                if (status === 'Esgotado') {
+                if (status.includes('❌')) {
                     data.cell.styles.textColor = [220, 53, 69];
                     data.cell.styles.fontStyle = 'bold';
-                } else if (status === 'Baixo') {
+                } else if (status.includes('⚠️')) {
                     data.cell.styles.textColor = [255, 193, 7];
                     data.cell.styles.fontStyle = 'bold';
                 } else {
                     data.cell.styles.textColor = [40, 167, 69];
+                    data.cell.styles.fontStyle = 'bold';
                 }
             }
         }
@@ -2735,18 +2801,38 @@ function exportLowStockToPDF() {
     const doc = createPDF();
     let yPos = addPDFHeader(doc, 'Relatório de Materiais em Falta');
     
-    // Alerta
-    yPos += 10;
-    doc.setFillColor(255, 243, 205);
-    doc.rect(15, yPos, 180, 15, 'F');
-    doc.setFontSize(11);
-    doc.setTextColor(133, 100, 4);
-    doc.text(`⚠️ ${lowStockItems.length} materiais precisam de reposição`, 20, yPos + 10);
+    // Seção de alerta melhorada
+    yPos += 15;
     
-    yPos += 20;
+    // Fundo do alerta
+    doc.setFillColor(255, 243, 205);
+    doc.rect(15, yPos - 5, 180, 20, 'F');
+    doc.setDrawColor(255, 193, 7);
+    doc.setLineWidth(1);
+    doc.rect(15, yPos - 5, 180, 20, 'S');
+    
+    // Ícone e texto do alerta
+    doc.setFontSize(14);
+    doc.setTextColor(133, 100, 4);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`⚠️ ALERTA DE ESTOQUE BAIXO`, 25, yPos + 5);
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`${lowStockItems.length} materiais precisam de reposição urgente`, 25, yPos + 12);
+    
+    yPos += 30;
+    
+    // Título da tabela
+    doc.setFontSize(12);
+    doc.setTextColor(52, 152, 219);
+    doc.setFont('helvetica', 'bold');
+    doc.text('📋 Materiais que Precisam de Reposição', 15, yPos);
+    
+    yPos += 5;
     doc.autoTable({
         startY: yPos,
-        head: [['Nome', 'Tipo', 'Atual', 'Mínimo', 'Necessário']],
+        head: [['Nome do Material', 'Categoria', 'Estoque Atual', 'Estoque Mínimo', 'Quantidade Necessária']],
         body: lowStockItems.map(p => [
             p.name,
             getTypeName(p.type),
@@ -2754,9 +2840,26 @@ function exportLowStockToPDF() {
             `${p.minQuantity} ${p.unit}`,
             `${Math.max(0, p.minQuantity - p.quantity)} ${p.unit}`
         ]),
-        styles: { fontSize: 9 },
-        headStyles: { fillColor: [255, 193, 7] },
-        alternateRowStyles: { fillColor: [255, 248, 225] }
+        styles: { 
+            fontSize: 9,
+            cellPadding: 4,
+            overflow: 'linebreak',
+            halign: 'left'
+        },
+        headStyles: { 
+            fillColor: [255, 193, 7],
+            textColor: [133, 100, 4],
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        alternateRowStyles: { fillColor: [255, 248, 225] },
+        columnStyles: {
+            0: { cellWidth: 70 }, // Nome
+            1: { cellWidth: 30 }, // Tipo
+            2: { cellWidth: 25, halign: 'center' }, // Atual
+            3: { cellWidth: 25, halign: 'center' }, // Mínimo
+            4: { cellWidth: 30, halign: 'center' } // Necessário
+        }
     });
     
     addPDFFooter(doc);
