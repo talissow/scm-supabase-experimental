@@ -118,7 +118,7 @@ window.addEventListener('online', () => {
                 if (typeof syncLocalToSupabase === 'function') {
                     await syncLocalToSupabase();
                 }
-                await syncToLocalDB(false);
+                // REMOVIDO: syncToLocalDB - Supabase é fonte de verdade
                 updateSyncStatus('done', 'Sincronização concluída');
             } catch (err) {
                 console.error('Erro na sincronização pós-reconexão:', err);
@@ -434,6 +434,18 @@ document.addEventListener('DOMContentLoaded', async function() {
 // ===== PERSISTÊNCIA DE DADOS =====
 async function saveToDatabase() {
     try {
+        // PRIORIDADE SUPABASE: Se online, salvar apenas no Supabase
+        if (isSupabaseOnline && supabaseInitialized) {
+            console.log('🌐 PRIORIDADE SUPABASE: Dados salvos na nuvem');
+            // IndexedDB apenas como backup offline
+            await saveAllProducts(products);
+            await saveAllMovements(movements);
+            invalidateCache();
+            return;
+        }
+        
+        // MODO OFFLINE: Salvar no IndexedDB
+        console.log('📂 MODO OFFLINE: Salvando no IndexedDB');
         await saveAllProducts(products);
         await saveAllMovements(movements);
         
@@ -450,25 +462,25 @@ async function saveToDatabase() {
 async function loadDataFromDB() {
     const startTime = performance.now();
     
-    // Verificar se cache é válido
-    if (isCacheValid()) {
+    // PRIORIDADE SUPABASE: Não usar cache quando online
+    const mode = typeof getOperationMode === 'function'
+        ? getOperationMode()
+        : (navigator.onLine ? 'local' : 'offline');
+    
+    // Só usar cache se estiver offline
+    if (mode === 'offline' && isCacheValid()) {
         products = productsCache;
         movements = movementsCache || [];
         const loadTime = (performance.now() - startTime).toFixed(2);
-        console.log(`⚡ CACHE HIT! Carregados ${products.length} produtos em ${loadTime}ms (instantâneo!)`);
+        console.log(`⚡ CACHE OFFLINE: Carregados ${products.length} produtos em ${loadTime}ms`);
         return;
     }
     
-    // Cache inválido - carregar do banco
     try {
-        // Determinar modo operacional
-        const mode = typeof getOperationMode === 'function'
-            ? getOperationMode()
-            : (navigator.onLine ? 'local' : 'offline');
-
-        // Tentar carregar do Supabase primeiro se online
+        // PRIORIDADE SUPABASE: Se online, Supabase é fonte de verdade
         if (mode === 'online' && supabaseInitialized && typeof supabaseClient !== 'undefined') {
-            console.log('🌐 Carregando do Supabase...');
+            console.log('🌐 PRIORIDADE SUPABASE: Carregando dados da nuvem...');
+            
             try {
                 const { data: supabaseProducts, error: productsError } = await supabaseClient
                     .from('products')
@@ -491,7 +503,8 @@ async function loadDataFromDB() {
                     type: p.type,
                     quantity: p.quantity,
                     minQuantity: p.min_quantity,
-                    unit: p.unit
+                    unit: p.unit,
+                    cost: p.cost || 0
                 }));
                 
                 movements = (supabaseMovements || []).map(m => ({
@@ -499,22 +512,25 @@ async function loadDataFromDB() {
                     productId: m.product_id,
                     type: m.type,
                     quantity: m.quantity,
-                    timestamp: m.timestamp
+                    destination: m.destination,
+                    timestamp: m.timestamp,
+                    description: m.description || ''
                 }));
                 
-                console.log(`✅ Carregados ${products.length} produtos e ${movements.length} movimentações do Supabase`);
+                console.log(`✅ SUPABASE: ${products.length} produtos e ${movements.length} movimentações carregados`);
                 
-                // Sincronizar com IndexedDB local
-                await syncToLocalDB();
+                // Salvar no IndexedDB como backup (sem sobrescrever Supabase)
+                await saveToDatabase();
                 
             } catch (supabaseError) {
                 console.error('❌ Erro ao carregar do Supabase:', supabaseError);
-                console.log('📂 Fallback: carregando do IndexedDB...');
+                console.log('📂 FALLBACK: Carregando do IndexedDB...');
                 products = await getAllProducts();
                 movements = await getAllMovements();
             }
         } else {
-            console.log('📂 Carregando do IndexedDB...');
+            // MODO OFFLINE: Usar IndexedDB
+            console.log('📂 MODO OFFLINE: Carregando do IndexedDB...');
             products = await getAllProducts();
             movements = await getAllMovements();
         }
