@@ -2995,7 +2995,244 @@ function exportFinancialToPDF() {
     alert('Relatório financeiro gerado!');
 }
 
-// 5. EXPORTAR DASHBOARD
+// 5. RELATÓRIO DE MOVIMENTAÇÕES POR MATERIAL
+function exportMovementsByMaterialToPDF() {
+    const doc = createPDF();
+    let yPos = addPDFHeader(doc, 'Relatório de Movimentações por Material');
+    
+    // Agrupar movimentações por material
+    const movementsByProduct = {};
+    movements.forEach(movement => {
+        const product = products.find(p => p.id === movement.productId);
+        if (product) {
+            if (!movementsByProduct[product.id]) {
+                movementsByProduct[product.id] = {
+                    product: product,
+                    movements: []
+                };
+            }
+            movementsByProduct[product.id].movements.push(movement);
+        }
+    });
+    
+    // Ordenar por nome do material
+    const sortedProducts = Object.values(movementsByProduct)
+        .sort((a, b) => a.product.name.localeCompare(b.product.name));
+    
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.setTextColor(52, 152, 219);
+    doc.setFont('helvetica', 'bold');
+    doc.text('■ Movimentações por Material', 15, yPos);
+    yPos += 5;
+    
+    sortedProducts.forEach((item, index) => {
+        const product = item.product;
+        const productMovements = item.movements;
+        
+        // Verificar se precisa de nova página
+        if (yPos > 250) {
+            doc.addPage();
+            yPos = 20;
+        }
+        
+        // Cabeçalho do material
+        yPos += 10;
+        doc.setFontSize(11);
+        doc.setTextColor(52, 152, 219);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`${product.name} (${productMovements.length} movimentações)`, 15, yPos);
+        
+        yPos += 5;
+        doc.setFontSize(9);
+        doc.setTextColor(100, 100, 100);
+        doc.setFont('helvetica', 'normal');
+        doc.text(`Categoria: ${getTypeName(product.type)} | Estoque Atual: ${product.quantity} ${product.unit}`, 15, yPos);
+        
+        yPos += 8;
+        
+        // Tabela de movimentações do material
+        if (productMovements.length > 0) {
+            doc.autoTable({
+                startY: yPos,
+                head: [['Data/Hora', 'Tipo', 'Quantidade', 'Destino', 'Observações']],
+                body: productMovements.map(m => {
+                    const date = new Date(m.timestamp);
+                    const formattedDate = date.toLocaleString('pt-BR');
+                    const typeText = m.type === 'entrada' ? 'Entrada' : m.type === 'saida' ? 'Saída' : 'Ajuste';
+                    const typeClass = m.type === 'entrada' ? 'status-ok' : 'status-low';
+                    
+                    return [
+                        formattedDate,
+                        typeText,
+                        m.quantity.toString(),
+                        m.destination || '-',
+                        m.description || '-'
+                    ];
+                }),
+                styles: { fontSize: 8, cellPadding: 3 },
+                headStyles: { fillColor: [52, 152, 219], textColor: [255, 255, 255], fontStyle: 'bold' },
+                alternateRowStyles: { fillColor: [248, 249, 250] },
+                columnStyles: {
+                    0: { cellWidth: 35 },
+                    1: { cellWidth: 20, halign: 'center' },
+                    2: { cellWidth: 20, halign: 'center' },
+                    3: { cellWidth: 30 },
+                    4: { cellWidth: 40 }
+                }
+            });
+            
+            yPos = doc.lastAutoTable.finalY + 5;
+        } else {
+            doc.setFontSize(9);
+            doc.setTextColor(150, 150, 150);
+            doc.text('Nenhuma movimentação registrada', 15, yPos);
+            yPos += 15;
+        }
+    });
+    
+    addPDFFooter(doc);
+    doc.save(`Movimentacoes_por_Material_${getDateString()}.pdf`);
+    alert('Relatório de movimentações por material gerado!');
+}
+
+// 6. RELATÓRIO DE SAÍDAS POR PERÍODO
+function exportOutputsByPeriodToPDF() {
+    // Solicitar período do usuário
+    const startDate = prompt('Data inicial (DD/MM/AAAA) ou deixe em branco para todos os dados:');
+    const endDate = prompt('Data final (DD/MM/AAAA) ou deixe em branco para todos os dados:');
+    
+    let filteredMovements = movements.filter(m => m.type === 'saida');
+    
+    // Aplicar filtros de data se fornecidos
+    if (startDate && startDate.trim()) {
+        const start = new Date(startDate.split('/').reverse().join('-'));
+        filteredMovements = filteredMovements.filter(m => new Date(m.timestamp) >= start);
+    }
+    
+    if (endDate && endDate.trim()) {
+        const end = new Date(endDate.split('/').reverse().join('-'));
+        end.setHours(23, 59, 59, 999); // Incluir todo o dia final
+        filteredMovements = filteredMovements.filter(m => new Date(m.timestamp) <= end);
+    }
+    
+    generateOutputsReport(filteredMovements, startDate, endDate);
+}
+
+function generateOutputsReport(outputMovements, startDate, endDate) {
+    const doc = createPDF();
+    let yPos = addPDFHeader(doc, 'Relatório de Saídas por Período');
+    
+    if (outputMovements.length === 0) {
+        yPos += 20;
+        doc.setFontSize(12);
+        doc.setTextColor(150, 150, 150);
+        doc.text('Nenhuma saída registrada no período', 15, yPos);
+        addPDFFooter(doc);
+        doc.save(`Saidas_por_Periodo_${getDateString()}.pdf`);
+        alert('Nenhuma saída registrada para gerar relatório!');
+        return;
+    }
+    
+    // Agrupar por data
+    const movementsByDate = {};
+    outputMovements.forEach(movement => {
+        const date = new Date(movement.timestamp).toLocaleDateString('pt-BR');
+        if (!movementsByDate[date]) {
+            movementsByDate[date] = [];
+        }
+        movementsByDate[date].push(movement);
+    });
+    
+    // Ordenar por data (mais recente primeiro)
+    const sortedDates = Object.keys(movementsByDate)
+        .sort((a, b) => new Date(b.split('/').reverse().join('-')) - new Date(a.split('/').reverse().join('-')));
+    
+    yPos += 10;
+    doc.setFontSize(12);
+    doc.setTextColor(52, 152, 219);
+    doc.setFont('helvetica', 'bold');
+    doc.text('■ Saídas por Período', 15, yPos);
+    yPos += 5;
+    
+    // Informações do período
+    if (startDate || endDate) {
+        doc.setFontSize(10);
+        doc.setTextColor(100, 100, 100);
+        doc.setFont('helvetica', 'normal');
+        const periodText = `Período: ${startDate || 'Início'} até ${endDate || 'Atual'}`;
+        doc.text(periodText, 15, yPos);
+        yPos += 8;
+    }
+    
+    // Resumo geral
+    const totalOutputs = outputMovements.length;
+    const totalQuantity = outputMovements.reduce((sum, m) => sum + m.quantity, 0);
+    const uniqueDestinations = [...new Set(outputMovements.map(m => m.destination).filter(d => d))];
+    
+    yPos += 5;
+    doc.setFontSize(10);
+    doc.setTextColor(60, 60, 60);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Total de Saídas: ${totalOutputs} | Quantidade Total: ${totalQuantity} | Destinos: ${uniqueDestinations.length}`, 15, yPos);
+    yPos += 15;
+    
+    // Relatório por data
+    sortedDates.forEach(date => {
+        const dateMovements = movementsByDate[date];
+        
+        // Verificar se precisa de nova página
+        if (yPos > 250) {
+            doc.addPage();
+            yPos = 20;
+        }
+        
+        // Cabeçalho da data
+        yPos += 10;
+        doc.setFontSize(11);
+        doc.setTextColor(52, 152, 219);
+        doc.setFont('helvetica', 'bold');
+        doc.text(`📅 ${date} (${dateMovements.length} saídas)`, 15, yPos);
+        
+        yPos += 5;
+        
+        // Tabela de saídas do dia
+        doc.autoTable({
+            startY: yPos,
+            head: [['Material', 'Quantidade', 'Unidade', 'Destino', 'Horário']],
+            body: dateMovements.map(m => {
+                const product = products.find(p => p.id === m.productId);
+                const time = new Date(m.timestamp).toLocaleTimeString('pt-BR');
+                
+                return [
+                    product ? product.name : 'Material não encontrado',
+                    m.quantity.toString(),
+                    product ? product.unit : '-',
+                    m.destination || '-',
+                    time
+                ];
+            }),
+            styles: { fontSize: 8, cellPadding: 3 },
+            headStyles: { fillColor: [255, 193, 7], textColor: [133, 100, 4], fontStyle: 'bold' },
+            alternateRowStyles: { fillColor: [255, 248, 225] },
+            columnStyles: {
+                0: { cellWidth: 50 },
+                1: { cellWidth: 20, halign: 'center' },
+                2: { cellWidth: 20, halign: 'center' },
+                3: { cellWidth: 30 },
+                4: { cellWidth: 20, halign: 'center' }
+            }
+        });
+        
+        yPos = doc.lastAutoTable.finalY + 5;
+    });
+    
+    addPDFFooter(doc);
+    doc.save(`Saidas_por_Periodo_${getDateString()}.pdf`);
+    alert('Relatório de saídas por período gerado!');
+}
+
+// 7. EXPORTAR DASHBOARD
 function exportDashboardToPDF() {
     const doc = createPDF();
     let yPos = addPDFHeader(doc, 'Dashboard do Estoque');
