@@ -2625,7 +2625,7 @@ function addPDFHeader(doc, title) {
     doc.setFontSize(18);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold');
-    doc.text('📦 SCM - Sistema de Controle de Materiais', 105, 15, { align: 'center' });
+    doc.text('SCM - Sistema de Controle de Materiais', 105, 15, { align: 'center' });
     
     // Subtítulo
     doc.setFontSize(12);
@@ -2706,7 +2706,7 @@ function exportFullReportToPDF() {
     doc.setFontSize(14);
     doc.setTextColor(52, 152, 219);
     doc.setFont('helvetica', 'bold');
-    doc.text('📊 Resumo Executivo', 20, yPos);
+    doc.text('■ Resumo Executivo', 20, yPos);
     
     // Estatísticas em colunas
     yPos += 8;
@@ -2719,19 +2719,19 @@ function exportFullReportToPDF() {
     const outOfStock = products.filter(p => p.quantity === 0).length;
     
     // Coluna 1
-    doc.text(`📦 Total de Materiais: ${products.length}`, 25, yPos);
-    doc.text(`💰 Valor Total: R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 25, yPos + 5);
+    doc.text(`• Total de Materiais: ${products.length}`, 25, yPos);
+    doc.text(`• Valor Total: R$ ${totalValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`, 25, yPos + 5);
     
     // Coluna 2
-    doc.text(`⚠️ Estoque Baixo: ${lowStock}`, 110, yPos);
-    doc.text(`❌ Esgotados: ${outOfStock}`, 110, yPos + 5);
+    doc.text(`! Estoque Baixo: ${lowStock}`, 110, yPos);
+    doc.text(`X Esgotados: ${outOfStock}`, 110, yPos + 5);
     
     // Tabela de materiais melhorada
     yPos += 20;
     doc.setFontSize(12);
     doc.setTextColor(52, 152, 219);
     doc.setFont('helvetica', 'bold');
-    doc.text('📋 Lista Completa de Materiais', 15, yPos);
+    doc.text('■ Lista Completa de Materiais', 15, yPos);
     
     yPos += 5;
     doc.autoTable({
@@ -2743,8 +2743,8 @@ function exportFullReportToPDF() {
             p.quantity.toString(),
             p.unit,
             p.minQuantity.toString(),
-            p.quantity === 0 ? '❌ Esgotado' : 
-            p.quantity <= p.minQuantity ? '⚠️ Baixo' : '✅ OK'
+            p.quantity === 0 ? 'X Esgotado' : 
+            p.quantity <= p.minQuantity ? '! Baixo' : 'OK'
         ]),
         styles: { 
             fontSize: 9,
@@ -2786,7 +2786,7 @@ function exportFullReportToPDF() {
     
     addPDFFooter(doc);
     doc.save(`Relatorio_Completo_${getDateString()}.pdf`);
-    alert('✅ Relatório PDF gerado com sucesso!');
+    alert('Relatório PDF gerado com sucesso!');
 }
 
 // 2. RELATÓRIO DE MATERIAIS EM FALTA
@@ -2815,7 +2815,7 @@ function exportLowStockToPDF() {
     doc.setFontSize(14);
     doc.setTextColor(133, 100, 4);
     doc.setFont('helvetica', 'bold');
-    doc.text(`⚠️ ALERTA DE ESTOQUE BAIXO`, 25, yPos + 5);
+    doc.text(`! ALERTA DE ESTOQUE BAIXO`, 25, yPos + 5);
     
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
@@ -2827,7 +2827,7 @@ function exportLowStockToPDF() {
     doc.setFontSize(12);
     doc.setTextColor(52, 152, 219);
     doc.setFont('helvetica', 'bold');
-    doc.text('📋 Materiais que Precisam de Reposição', 15, yPos);
+    doc.text('■ Materiais que Precisam de Reposição', 15, yPos);
     
     yPos += 5;
     doc.autoTable({
@@ -2864,7 +2864,7 @@ function exportLowStockToPDF() {
     
     addPDFFooter(doc);
     doc.save(`Materiais_em_Falta_${getDateString()}.pdf`);
-    alert('✅ Relatório de falta gerado com sucesso!');
+    alert('Relatório de falta gerado com sucesso!');
 }
 
 // 3. RELATÓRIO POR CATEGORIA
@@ -2896,7 +2896,7 @@ function exportByCategoryToPDF() {
         
         doc.setFontSize(12);
         doc.setTextColor(52, 152, 219);
-        doc.text(`${getTypeIcon(type)} ${type} (${items.length} itens)`, 15, yPos);
+        doc.text(`■ ${type} (${items.length} itens)`, 15, yPos);
         
         yPos += 5;
         doc.autoTable({
@@ -2907,7 +2907,7 @@ function exportByCategoryToPDF() {
                 p.quantity,
                 p.unit,
                 p.minQuantity,
-                p.quantity === 0 ? '❌' : p.quantity <= p.minQuantity ? '⚠️' : '✅'
+                p.quantity === 0 ? 'X' : p.quantity <= p.minQuantity ? '!' : 'OK'
             ]),
             styles: { fontSize: 9 },
             headStyles: { fillColor: [52, 152, 219] },
@@ -2919,7 +2919,7 @@ function exportByCategoryToPDF() {
     
     addPDFFooter(doc);
     doc.save(`Relatorio_por_Categoria_${getDateString()}.pdf`);
-    alert('✅ Relatório por categoria gerado!');
+    alert('Relatório por categoria gerado!');
 }
 
 // 4. RELATÓRIO FINANCEIRO
@@ -2935,7 +2935,7 @@ function exportFinancialToPDF() {
     // Resumo financeiro
     yPos += 10;
     doc.setFontSize(12);
-    doc.text('💰 Resumo Financeiro', 15, yPos);
+    doc.text('■ Resumo Financeiro', 15, yPos);
     
     yPos += 7;
     doc.setFontSize(10);
@@ -2976,7 +2976,7 @@ function exportFinancialToPDF() {
     
     addPDFFooter(doc);
     doc.save(`Relatorio_Financeiro_${getDateString()}.pdf`);
-    alert('✅ Relatório financeiro gerado!');
+    alert('Relatório financeiro gerado!');
 }
 
 // 5. EXPORTAR DASHBOARD
@@ -3031,7 +3031,7 @@ function exportDashboardToPDF() {
     
     addPDFFooter(doc);
     doc.save(`Dashboard_${getDateString()}.pdf`);
-    alert('✅ Dashboard exportado em PDF!');
+    alert('Dashboard exportado em PDF!');
 }
 
 // Função auxiliar para ícone do tipo
