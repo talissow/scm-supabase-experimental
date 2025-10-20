@@ -5,6 +5,10 @@
       "destination": "/login.html"
     },
     {
+      "source": "/movimentacao.html",
+      "destination": "/SCM_Supabase.html#list"
+    },
+    {
       "source": "/login",
       "destination": "/login.html"
     },
