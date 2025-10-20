@@ -19,6 +19,37 @@
     <script src="supabase-config.js"></script>
     <script src="auth.js"></script>
     <script src="auth-guard.js"></script>
+    <script>
+        // Caso a SCM seja aberta já com hash do dashboard e parâmetros (produto/tipo),
+        // acionar a edição automaticamente.
+        (function () {
+            try {
+                var hash = window.location.hash || '';
+                if (hash.toLowerCase().indexOf('dashboard') !== -1) {
+                    var qsPart = hash.split('&').slice(1).join('&');
+                    if (qsPart) {
+                        var params = new URLSearchParams(qsPart);
+                        var productId = params.get('produto');
+                        var tipo = params.get('tipo') || 'entrada';
+                        if (productId) {
+                            setTimeout(function () {
+                                if (typeof switchTab === 'function') switchTab('dashboard');
+                                if (typeof editProduct === 'function') {
+                                    try { editProduct(productId); } catch (e) {}
+                                    var qty = document.getElementById('productQuantity');
+                                    if (qty) qty.focus();
+                                } else if (typeof openMovementModal === 'function') {
+                                    try { openMovementModal(productId); } catch (e) {}
+                                    var radio = document.querySelector('input[name="movementType"][value="' + tipo + '"]');
+                                    if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change')); }
+                                }
+                            }, 200);
+                        }
+                    }
+                }
+            } catch (e) {}
+        })();
+    </script>
 </head>
 <body>
     <div class="container">
