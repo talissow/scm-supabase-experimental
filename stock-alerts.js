@@ -204,6 +204,8 @@ function showLowStockDetails(items) {
             if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
             const productId = button.getAttribute('data-id');
             // Seguir a mesma lógica do botão "Atualizar" na lista: abrir formulário de edição do material
+            // Forçar hash da aba "list" para manter a página (evita rewrite da Vercel)
+            try { window.location.hash = '#list'; } catch (_) {}
             if (typeof switchTab === 'function') {
                 try { switchTab('list'); } catch (_) {}
             }

@@ -45,9 +45,14 @@ class SCMRouter {
         document.addEventListener('click', (event) => {
             const link = event.target.closest('a[href^="/"]');
             if (link && !link.hasAttribute('data-bypass-router')) {
+                // Se o link é apenas uma âncora da própria página, não navegar
+                const href = link.getAttribute('href');
+                if (href === '#' || href === '/' || href === '/#') {
+                    event.preventDefault();
+                    return;
+                }
                 event.preventDefault();
-                const route = link.getAttribute('href');
-                this.navigate(route);
+                this.navigate(href);
             }
         });
     }

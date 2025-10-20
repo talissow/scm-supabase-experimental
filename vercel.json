@@ -29,7 +29,7 @@
       "destination": "/admin-interno.html"
     },
     {
-      "source": "/((?!login\\.html|index\\.html|admin-interno\\.html|styles\\.css|app\\.js|db\\.js|auth\\.js|supabase-config\\.js|supabase-adapter\\.js|router\\.js|auth-guard\\.js|TESTE_.*\\.html|CRIAR_ADMIN\\.html).*)",
+      "source": "/((?!login\\.html|index\\.html|SCM_Supabase\\.html|usuarios\\.html|admin-interno\\.html|styles\\.css|app\\.js|db\\.js|auth\\.js|supabase-config\\.js|supabase-adapter\\.js|router\\.js|auth-guard\\.js|toast-notifications\\.js|stock-alerts\\.js|pagination\\.js|cache-manager\\.js|TESTE_.*\\.html|CRIAR_ADMIN\\.html).*)",
       "destination": "/login.html"
     }
   ],
