@@ -198,10 +198,17 @@ function showLowStockDetails(items) {
     // Adicionar eventos para botões de adicionar estoque
     const addButtons = modal.querySelectorAll('.btn-add-stock');
     addButtons.forEach(button => {
-        button.addEventListener('click', () => {
+        button.addEventListener('click', (ev) => {
+            // Evitar qualquer navegação inesperada
+            if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
+            if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
             const productId = button.getAttribute('data-id');
             // Abrir modal de movimentação na própria página com tipo 'entrada'
             if (typeof openMovementModal === 'function') {
+                // Garantir que estamos na aba de lista onde o modal existe
+                if (typeof switchTab === 'function') {
+                    try { switchTab('list'); } catch (_) {}
+                }
                 openMovementModal(productId);
                 const entradaRadio = document.querySelector('input[name="movementType"][value="entrada"]');
                 if (entradaRadio) {
