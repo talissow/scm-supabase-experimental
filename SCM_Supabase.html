@@ -24,30 +24,62 @@
         // acionar a edição automaticamente.
         (function () {
             try {
+                console.log('SCM - Checking for parameters...');
                 var hash = window.location.hash || '';
-                if (hash.toLowerCase().indexOf('dashboard') !== -1) {
+                var search = window.location.search || '';
+                console.log('Hash:', hash, 'Search:', search);
+                
+                // Verificar se estamos no dashboard
+                var isDashboard = hash.toLowerCase().indexOf('dashboard') !== -1;
+                console.log('Is dashboard:', isDashboard);
+                
+                if (isDashboard) {
+                    var productId = null;
+                    var tipo = 'entrada';
+                    
+                    // Primeiro tentar buscar parâmetros no hash
                     var qsPart = hash.split('&').slice(1).join('&');
                     if (qsPart) {
                         var params = new URLSearchParams(qsPart);
-                        var productId = params.get('produto');
-                        var tipo = params.get('tipo') || 'entrada';
-                        if (productId) {
-                            setTimeout(function () {
-                                if (typeof switchTab === 'function') switchTab('dashboard');
-                                if (typeof editProduct === 'function') {
-                                    try { editProduct(productId); } catch (e) {}
-                                    var qty = document.getElementById('productQuantity');
-                                    if (qty) qty.focus();
-                                } else if (typeof openMovementModal === 'function') {
-                                    try { openMovementModal(productId); } catch (e) {}
-                                    var radio = document.querySelector('input[name="movementType"][value="' + tipo + '"]');
-                                    if (radio) { radio.checked = true; radio.dispatchEvent(new Event('change')); }
+                        productId = params.get('produto');
+                        tipo = params.get('tipo') || 'entrada';
+                        console.log('From hash - Product ID:', productId, 'Tipo:', tipo);
+                    }
+                    
+                    // Se não encontrou no hash, buscar na query string
+                    if (!productId && search) {
+                        var urlParams = new URLSearchParams(search);
+                        productId = urlParams.get('produto');
+                        tipo = urlParams.get('tipo') || 'entrada';
+                        console.log('From search - Product ID:', productId, 'Tipo:', tipo);
+                    }
+                    
+                    if (productId) {
+                        console.log('Opening product edit for ID:', productId);
+                        setTimeout(function () {
+                            if (typeof switchTab === 'function') {
+                                console.log('Switching to dashboard tab');
+                                switchTab('dashboard');
+                            }
+                            if (typeof editProduct === 'function') {
+                                try { 
+                                    console.log('Calling editProduct');
+                                    editProduct(productId); 
+                                } catch (e) {
+                                    console.error('Error calling editProduct:', e);
                                 }
-                            }, 200);
-                        }
+                                var qty = document.getElementById('productQuantity');
+                                if (qty) {
+                                    console.log('Focusing on quantity field');
+                                    qty.focus();
+                                }
+                            }
+                        }, 500); // Aumentei o timeout para dar tempo dos scripts carregarem
                     }
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error('Error in SCM parameter processing:', e);
+            }
         })();
     </script>
 </head>

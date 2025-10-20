@@ -12,17 +12,25 @@
         (function () {
             try {
                 var path = window.location.pathname || '';
+                console.log('Login page - path:', path);
                 if (path.endsWith('/movimentacao.html')) {
+                    console.log('Detected movimentacao.html, redirecting...');
                     var url = new URL(window.location.href);
                     var productId = url.searchParams.get('produto');
                     var tipo = url.searchParams.get('tipo') || 'entrada';
+                    console.log('Product ID:', productId, 'Tipo:', tipo);
+                    
                     var target = '/SCM_Supabase.html#dashboard';
                     if (productId) {
-                        target += '&produto=' + encodeURIComponent(productId) + '&tipo=' + encodeURIComponent(tipo);
+                        target += '?produto=' + encodeURIComponent(productId) + '&tipo=' + encodeURIComponent(tipo);
                     }
+                    console.log('Redirecting to:', target);
                     window.location.replace(target);
+                    return;
                 }
-            } catch (e) {}
+            } catch (e) {
+                console.error('Error in redirect script:', e);
+            }
         })();
     </script>
     <style>
