@@ -32,6 +32,14 @@
       "source": "/((?!login\\.html|index\\.html|admin-interno\\.html|styles\\.css|app\\.js|db\\.js|auth\\.js|supabase-config\\.js|supabase-adapter\\.js|router\\.js|auth-guard\\.js|TESTE_.*\\.html|CRIAR_ADMIN\\.html).*)",
       "destination": "/login.html"
     }
+  ],
+  "functions": {
+    "api/**": {
+      "runtime": "nodejs18.x"
+    }
+  },
+  "cron": [
+    { "path": "/api/weekly-report", "schedule": "0 12 * * 1" }
   ]
 }
 
