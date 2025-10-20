@@ -203,23 +203,18 @@ function showLowStockDetails(items) {
             if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
             if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
             const productId = button.getAttribute('data-id');
-            // Abrir modal de movimentação na própria página com tipo 'entrada'
-            if (typeof openMovementModal === 'function') {
-                // Garantir que estamos na aba de lista onde o modal existe
-                if (typeof switchTab === 'function') {
-                    try { switchTab('list'); } catch (_) {}
-                }
-                openMovementModal(productId);
-                const entradaRadio = document.querySelector('input[name="movementType"][value="entrada"]');
-                if (entradaRadio) {
-                    entradaRadio.checked = true;
-                    entradaRadio.dispatchEvent(new Event('change'));
-                }
-                const qty = document.getElementById('movementQuantity');
-                if (qty) qty.focus();
-                // Fechar modal de detalhes
-                modal.remove();
+            // Seguir a mesma lógica do botão "Atualizar" na lista: abrir formulário de edição do material
+            if (typeof switchTab === 'function') {
+                try { switchTab('list'); } catch (_) {}
             }
+            if (typeof editProduct === 'function') {
+                try { editProduct(productId); } catch (_) {}
+            }
+            // Focar no campo de quantidade para facilitar ajuste
+            const qtyField = document.getElementById('productQuantity');
+            if (qtyField) qtyField.focus();
+            // Fechar modal de detalhes
+            modal.remove();
         });
     });
 }
