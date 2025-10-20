@@ -203,11 +203,10 @@ function showLowStockDetails(items) {
             if (ev && typeof ev.preventDefault === 'function') ev.preventDefault();
             if (ev && typeof ev.stopPropagation === 'function') ev.stopPropagation();
             const productId = button.getAttribute('data-id');
-            // Seguir a mesma lógica do botão "Atualizar" na lista: abrir formulário de edição do material
-            // Forçar hash da aba "list" para manter a página (evita rewrite da Vercel)
-            try { window.location.hash = '#list'; } catch (_) {}
+            // Ir para o dashboard e reaproveitar a lógica de edição existente
+            try { window.location.hash = '#dashboard'; } catch (_) {}
             if (typeof switchTab === 'function') {
-                try { switchTab('list'); } catch (_) {}
+                try { switchTab('dashboard'); } catch (_) {}
             }
             if (typeof editProduct === 'function') {
                 try { editProduct(productId); } catch (_) {}
