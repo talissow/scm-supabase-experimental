@@ -200,8 +200,19 @@ function showLowStockDetails(items) {
     addButtons.forEach(button => {
         button.addEventListener('click', () => {
             const productId = button.getAttribute('data-id');
-            // Redirecionar para página de movimentação com o produto pré-selecionado
-            window.location.href = `/movimentacao.html?produto=${productId}&tipo=entrada`;
+            // Abrir modal de movimentação na própria página com tipo 'entrada'
+            if (typeof openMovementModal === 'function') {
+                openMovementModal(productId);
+                const entradaRadio = document.querySelector('input[name="movementType"][value="entrada"]');
+                if (entradaRadio) {
+                    entradaRadio.checked = true;
+                    entradaRadio.dispatchEvent(new Event('change'));
+                }
+                const qty = document.getElementById('movementQuantity');
+                if (qty) qty.focus();
+                // Fechar modal de detalhes
+                modal.remove();
+            }
         });
     });
 }
