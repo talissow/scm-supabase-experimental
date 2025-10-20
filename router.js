@@ -43,14 +43,46 @@ class SCMRouter {
     // Interceptar cliques em links internos
     setupLinkInterception() {
         document.addEventListener('click', (event) => {
-            const link = event.target.closest('a[href^="/"]');
-            if (link && !link.hasAttribute('data-bypass-router')) {
-                // Se o link é apenas uma âncora da própria página, não navegar
-                const href = link.getAttribute('href');
-                if (href === '#' || href === '/' || href === '/#') {
-                    event.preventDefault();
-                    return;
+            const link = event.target.closest('a[href]');
+            if (!link || link.hasAttribute('data-bypass-router')) return;
+
+            const href = link.getAttribute('href');
+
+            // Ignorar âncoras vazias
+            if (href === '#' || href === '/' || href === '/#') {
+                event.preventDefault();
+                return;
+            }
+
+            // Corrigir link legado /movimentacao.html
+            if (href.startsWith('/movimentacao.html')) {
+                event.preventDefault();
+                try {
+                    const u = new URL(href, window.location.origin);
+                    const productId = u.searchParams.get('produto');
+                    const tipo = u.searchParams.get('tipo') || 'entrada';
+                    window.history.pushState({ route: '/dashboard' }, '', '/SCM_Supabase.html#dashboard');
+                    if (typeof switchTab === 'function') switchTab('dashboard');
+                    if (productId && typeof editProduct === 'function') {
+                        try { editProduct(productId); } catch (_) {}
+                        const qty = document.getElementById('productQuantity');
+                        if (qty) qty.focus();
+                    } else if (productId && typeof openMovementModal === 'function') {
+                        try { openMovementModal(productId); } catch (_) {}
+                        const radio = document.querySelector(`input[name="movementType"][value="${tipo}"]`);
+                        if (radio) {
+                            radio.checked = true;
+                            radio.dispatchEvent(new Event('change'));
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Intercept mov. legado falhou:', e);
                 }
+                return;
+            }
+
+            // Links internos normais controlados pelo roteador
+            if (href.startsWith('/')) {
                 event.preventDefault();
                 this.navigate(href);
             }
@@ -63,6 +95,34 @@ class SCMRouter {
         const hash = window.location.hash.substring(1);
         
         console.log('📍 Rota atual:', path, hash ? `#${hash}` : '');
+
+        // Vacina contra rota legada: /movimentacao.html
+        try {
+            if (path.endsWith('/movimentacao.html')) {
+                const url = new URL(window.location.href);
+                const productId = url.searchParams.get('produto');
+                const tipo = url.searchParams.get('tipo') || 'entrada';
+                window.history.replaceState(null, '', '/SCM_Supabase.html#dashboard');
+                setTimeout(() => {
+                    if (typeof switchTab === 'function') switchTab('dashboard');
+                    if (productId && typeof editProduct === 'function') {
+                        try { editProduct(productId); } catch (_) {}
+                        const qty = document.getElementById('productQuantity');
+                        if (qty) qty.focus();
+                    } else if (productId && typeof openMovementModal === 'function') {
+                        try { openMovementModal(productId); } catch (_) {}
+                        const radio = document.querySelector(`input[name="movementType"][value="${tipo}"]`);
+                        if (radio) {
+                            radio.checked = true;
+                            radio.dispatchEvent(new Event('change'));
+                        }
+                    }
+                }, 150);
+                return;
+            }
+        } catch (e) {
+            console.warn('Router fallback movimentacao.html falhou:', e);
+        }
         
         // Deixar o auth-guard fazer a verificação de autenticação
         // Apenas processar a rota se não for redirecionamento
