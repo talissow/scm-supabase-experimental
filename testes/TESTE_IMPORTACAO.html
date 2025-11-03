@@ -209,9 +209,7 @@
                     type: p.type,
                     quantity: p.quantity,
                     min_quantity: p.min_quantity,
-                    unit: p.unit,
-                    created_at: new Date().toISOString(),
-                    updated_at: new Date().toISOString()
+                    unit: p.unit
                 }));
                 
                 const { error } = await supabaseClient

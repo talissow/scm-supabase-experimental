@@ -816,8 +816,7 @@ async function handleProductSubmit(e) {
                                 quantity: product.quantity,
                                 min_quantity: product.minQuantity,
                                 unit: product.unit,
-                                updated_by: currentUserId,
-                                updated_at: new Date().toISOString()
+                                updated_by: currentUserId
                             })
                             .eq('id', product.id);
                         
@@ -849,9 +848,7 @@ async function handleProductSubmit(e) {
                         min_quantity: product.minQuantity,
                         unit: product.unit,
                         created_by: currentUserId,
-                        updated_by: currentUserId,
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString()
+                        updated_by: currentUserId
                     };
                     // Apenas envia o ID se já for um UUID válido
                     if (isValidUUID(product.id)) {
@@ -1670,8 +1667,7 @@ async function handleMovementSubmit(e) {
                 const { error: productError } = await supabaseClient
                     .from('products')
                     .update({
-                        quantity: product.quantity,
-                        updated_at: new Date().toISOString()
+                        quantity: product.quantity
                     })
                     .eq('id', productId);
                 
@@ -1865,17 +1861,23 @@ function importJSON(file) {
                         
                         // Inserir novos produtos
                         if (data.products && data.products.length > 0) {
-                            const supabaseProducts = data.products.map(p => ({
-                                id: p.id,
-                                name: p.name,
-                                description: p.description || '',
-                                type: p.type,
-                                quantity: p.quantity,
-                                min_quantity: p.minQuantity,
-                                unit: p.unit,
-                                created_at: new Date().toISOString(),
-                                updated_at: new Date().toISOString()
-                            }));
+                            const supabaseProducts = data.products.map(p => {
+                                const obj = {
+                                    name: p.name,
+                                    description: p.description || '',
+                                    type: p.type,
+                                    quantity: p.quantity,
+                                    min_quantity: p.minQuantity,
+                                    unit: p.unit,
+                                    created_at: new Date().toISOString(),
+                                    updated_at: new Date().toISOString()
+                                };
+                                // Apenas enviar ID se for UUID válido
+                                if (typeof isValidUUID === 'function' && isValidUUID(p.id)) {
+                                    obj.id = p.id;
+                                }
+                                return obj;
+                            });
                             
                             const { error: productsError } = await supabaseClient
                                 .from('products')
@@ -1886,13 +1888,18 @@ function importJSON(file) {
                         
                         // Inserir movimentações
                         if (data.movements && data.movements.length > 0) {
-                            const supabaseMovements = data.movements.map(m => ({
-                                id: m.id,
-                                product_id: m.productId,
-                                type: m.type,
-                                quantity: m.quantity,
-                                timestamp: m.timestamp
-                            }));
+                            const supabaseMovements = data.movements.map(m => {
+                                const obj = {
+                                    product_id: m.productId,
+                                    type: m.type,
+                                    quantity: m.quantity,
+                                    timestamp: m.timestamp
+                                };
+                                if (typeof isValidUUID === 'function' && isValidUUID(m.id)) {
+                                    obj.id = m.id;
+                                }
+                                return obj;
+                            });
                             
                             const { error: movementsError } = await supabaseClient
                                 .from('movements')
@@ -1981,17 +1988,22 @@ function importCSV(file) {
                 // Salvar no Supabase se online
                 if (isSupabaseOnline && supabaseInitialized) {
                     try {
-                        const supabaseProducts = newProducts.map(p => ({
-                            id: p.id,
-                            name: p.name,
-                            description: p.description || '',
-                            type: p.type,
-                            quantity: p.quantity,
-                            min_quantity: p.minQuantity,
-                            unit: p.unit,
-                            created_at: new Date().toISOString(),
-                            updated_at: new Date().toISOString()
-                        }));
+                        const supabaseProducts = newProducts.map(p => {
+                            const obj = {
+                                name: p.name,
+                                description: p.description || '',
+                                type: p.type,
+                                quantity: p.quantity,
+                                min_quantity: p.minQuantity,
+                                unit: p.unit,
+                                created_at: new Date().toISOString(),
+                                updated_at: new Date().toISOString()
+                            };
+                            if (typeof isValidUUID === 'function' && isValidUUID(p.id)) {
+                                obj.id = p.id;
+                            }
+                            return obj;
+                        });
                         
                         const { error } = await supabaseClient
                             .from('products')

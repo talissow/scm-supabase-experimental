@@ -43,7 +43,8 @@
     }
   },
   "cron": [
-    { "path": "/api/weekly-report", "schedule": "0 12 * * 1" }
+    { "path": "/api/weekly-report", "schedule": "0 12 * * 1" },
+    { "path": "/api/health", "schedule": "0 */12 * * *" }
   ]
 }
 

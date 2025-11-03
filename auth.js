@@ -5,13 +5,18 @@ let authIsAuthenticated = false;
 // Inicializar autenticação
 async function initAuth() {
     try {
-        if (!supabaseClient) {
-            console.error('❌ Supabase client não inicializado');
-            return false;
+        // Garantir inicialização segura do Supabase (sem ReferenceError)
+        if (typeof window.supabaseClient === 'undefined' || !window.supabaseClient) {
+            console.log('🔄 Supabase client não inicializado, tentando inicializar...');
+            const initialized = (typeof window.initSupabase === 'function') ? window.initSupabase() : false;
+            if (!initialized || !window.supabaseClient) {
+                console.error('❌ Supabase client não inicializado');
+                return false;
+            }
         }
 
         // Verificar sessão ativa
-        const { data: { session }, error } = await supabaseClient.auth.getSession();
+        const { data: { session }, error } = await window.supabaseClient.auth.getSession();
         
         if (error) {
             console.error('❌ Erro ao verificar sessão:', error);
@@ -40,15 +45,15 @@ async function initAuth() {
 // Fazer login
 async function login(email, password) {
     try {
-        if (!supabaseClient) {
+        if (typeof window.supabaseClient === 'undefined' || !window.supabaseClient) {
             console.log('🔄 Supabase client não inicializado, tentando inicializar...');
-            const initialized = initSupabase();
-            if (!initialized) {
+            const initialized = (typeof window.initSupabase === 'function') ? window.initSupabase() : false;
+            if (!initialized || !window.supabaseClient) {
                 throw new Error('Falha ao inicializar Supabase client');
             }
         }
 
-        const { data, error } = await supabaseClient.auth.signInWithPassword({
+        const { data, error } = await window.supabaseClient.auth.signInWithPassword({
             email: email,
             password: password
         });
@@ -100,15 +105,15 @@ async function signUp(email, password, fullName) {
     try {
         console.log('🔄 Tentando registrar usuário:', email);
         
-        if (!supabaseClient) {
+        if (typeof window.supabaseClient === 'undefined' || !window.supabaseClient) {
             console.log('🔄 Supabase client não inicializado, tentando inicializar...');
-            const initialized = initSupabase();
-            if (!initialized) {
+            const initialized = (typeof window.initSupabase === 'function') ? window.initSupabase() : false;
+            if (!initialized || !window.supabaseClient) {
                 throw new Error('Falha ao inicializar Supabase client');
             }
         }
 
-        const { data, error } = await supabaseClient.auth.signUp({
+        const { data, error } = await window.supabaseClient.auth.signUp({
             email: email,
             password: password,
             options: {

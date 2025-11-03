@@ -195,8 +195,8 @@
             document.getElementById('productResults').innerHTML = '';
             
             try {
+                // Não enviar ID manual quando o banco usa UUID; deixar o Supabase gerar
                 const product = {
-                    id: `test_${Date.now()}`,
                     name: `Produto Teste ${Date.now()}`,
                     description: 'Produto criado pelo teste automatizado',
                     type: 'Teste',
@@ -204,17 +204,19 @@
                     min_quantity: 10,
                     unit: 'unid'
                 };
-                
+
                 const { data, error } = await supabaseClient
                     .from('products')
-                    .insert(product);
-                
+                    .insert(product)
+                    .select('id');
+
                 if (error) throw error;
-                
-                testProductId = product.id;
+
+                // Capturar o ID gerado pelo banco
+                testProductId = (data && data[0] && data[0].id) ? data[0].id : null;
                 showResult('productResults', `✅ Produto criado: ${product.name}`, 'success');
-                log(`🟢 Produto criado no Supabase: ${product.name}`);
-                
+                log(`🟢 Produto criado no Supabase: ${product.name} (ID: ${testProductId || 'desconhecido'})`);
+
             } catch (error) {
                 showResult('productResults', `❌ Erro ao criar produto: ${error.message}`, 'error');
                 log(`❌ Erro ao criar produto: ${error.message}`);
@@ -233,8 +235,7 @@
                 const { data, error } = await supabaseClient
                     .from('products')
                     .update({ 
-                        quantity: 150,
-                        updated_at: new Date().toISOString()
+                        quantity: 150
                     })
                     .eq('id', testProductId);
                 
