@@ -1,0 +1,205 @@
+{
+  "projeto": "SCM - Sistema de Controle de Materiais com Supabase",
+  "data": "2025-04-27",
+  "status": "DOCUMENTAÇÃO COMPLETA - PRONTO PARA EXECUÇÃO",
+  "tempo_setup": "~30 minutos",
+  
+  "credenciais": {
+    "supabase_project_id": "kaqkzrngebxfuvquromi",
+    "supabase_url": "https://kaqkzrngebxfuvquromi.supabase.co",
+    "supabase_dashboard": "https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi",
+    "email_admin_padrao": "admin@scm.local",
+    "site_url": "https://scm-supabase.vercel.app"
+  },
+
+  "documentos_criados": {
+    "COMECE_AQUI.md": {
+      "tipo": "Entrada",
+      "proposito": "Ponto de partida com 4 opções de caminho",
+      "tempo_leitura": "2 min",
+      "recomendado_para": "Todos"
+    },
+    "GUIA_RAPIDO_30MIN.md": {
+      "tipo": "Ação Rápida",
+      "proposito": "6 passos simples para setup completo",
+      "tempo_leitura": "10 min",
+      "tempo_execucao": "30 min",
+      "recomendado_para": "Executores"
+    },
+    "SETUP_INTERATIVO.html": {
+      "tipo": "Interface Web",
+      "proposito": "Navegação interativa passo a passo",
+      "tempo_uso": "30 min",
+      "recursos": ["Cards interativos", "Checklist", "Links rápidos", "Barra de progresso"],
+      "recomendado_para": "Visuais"
+    },
+    "CHECKLIST_SETUP.md": {
+      "tipo": "Referência",
+      "proposito": "Checklist detalhado com todas as verificações",
+      "tempo_consulta": "Conforme necessário",
+      "tarefas": 6,
+      "subtarefas": 40,
+      "recomendado_para": "Organizado"
+    },
+    "SETUP_COMPLETO_PASSO_A_PASSO.md": {
+      "tipo": "Documentação",
+      "proposito": "Guia aprofundado com todos os detalhes",
+      "tempo_leitura": "30 min",
+      "secoes": ["Configuração", "Verificação", "Troubleshooting", "Próximos passos"],
+      "recomendado_para": "Aprendizado"
+    },
+    "RESUMO_EXECUTIVO.md": {
+      "tipo": "Visão Geral",
+      "proposito": "Resumo de tudo que foi preparado",
+      "tempo_leitura": "10 min",
+      "recomendado_para": "Gestão"
+    }
+  },
+
+  "tarefas_do_usuario": [
+    {
+      "numero": 1,
+      "titulo": "Configurar Authentication URLs",
+      "local": "Supabase Dashboard",
+      "tempo": "5 min",
+      "passos": 5,
+      "url_supabase": "https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi/auth/settings"
+    },
+    {
+      "numero": 2,
+      "titulo": "Desabilitar Email Confirmations",
+      "local": "Supabase Settings",
+      "tempo": "3 min",
+      "passos": 5,
+      "url_supabase": "https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi/auth/settings"
+    },
+    {
+      "numero": 3,
+      "titulo": "Executar Schema SQL",
+      "local": "Supabase SQL Editor",
+      "tempo": "5 min",
+      "passos": 5,
+      "arquivo": "/sql/supabase_schema_public.sql",
+      "url_supabase": "https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi/sql/new"
+    },
+    {
+      "numero": 4,
+      "titulo": "Criar Primeiro Usuário Admin",
+      "local": "/CRIAR_ADMIN.html",
+      "tempo": "5 min",
+      "passos": 5,
+      "email_exemplo": "admin@scm.local"
+    },
+    {
+      "numero": 5,
+      "titulo": "Testar Conexão com Supabase",
+      "local": "/TESTE_CONEXAO.html",
+      "tempo": "5 min",
+      "passos": 5,
+      "testes": 4
+    },
+    {
+      "numero": 6,
+      "titulo": "Validar Login/Logout",
+      "local": "/login.html",
+      "tempo": "5 min",
+      "passos": 7,
+      "subtestes": 3
+    }
+  ],
+
+  "tabelas_criadas": {
+    "users": "Usuários do sistema",
+    "products": "Produtos/Materiais do estoque",
+    "movements": "Movimentações (entrada/saída)",
+    "custom_types": "Tipos customizáveis",
+    "audit_log": "Log de auditoria"
+  },
+
+  "links_rapidos": {
+    "dashboard_supabase": "https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi",
+    "teste_conexao": "/TESTE_CONEXAO.html",
+    "criar_admin": "/CRIAR_ADMIN.html",
+    "login": "/login.html",
+    "dashboard_principal": "/SCM_Supabase.html",
+    "github": "https://github.com/talissow/scm-supabase-experimental",
+    "vercel_deploy": "https://scm-supabase.vercel.app"
+  },
+
+  "arquivos_do_projeto": {
+    "html": [
+      "index.html",
+      "login.html",
+      "SCM_Supabase.html",
+      "admin-interno.html",
+      "CRIAR_ADMIN.html",
+      "TESTE_CONEXAO.html",
+      "SETUP_INTERATIVO.html"
+    ],
+    "javascript": [
+      "js/app.js",
+      "js/auth.js",
+      "js/auth-guard.js",
+      "js/supabase-manager.js",
+      "js/supabase-adapter.js",
+      "js/router.js",
+      "js/db.js"
+    ],
+    "sql": [
+      "sql/supabase_schema_public.sql",
+      "sql/supabase_schema_minimal.sql"
+    ],
+    "documentacao": [
+      "COMECE_AQUI.md",
+      "GUIA_RAPIDO_30MIN.md",
+      "CHECKLIST_SETUP.md",
+      "RESUMO_EXECUTIVO.md",
+      "docs/SETUP_COMPLETO_PASSO_A_PASSO.md"
+    ]
+  },
+
+  "solucao_problemas": {
+    "user_not_allowed": {
+      "causa": "Email confirmations habilitado ou URLs não configuradas",
+      "solucao": "Desabilitar email confirmations (Tarefa 2) e configurar todas as 7 URLs (Tarefa 1)"
+    },
+    "tabelas_nao_encontradas": {
+      "causa": "Schema SQL não executado",
+      "solucao": "Executar supabase_schema_public.sql novamente (Tarefa 3)"
+    },
+    "conexao_recusada": {
+      "causa": "Internet indisponível ou credenciais incorretas",
+      "solucao": "Verificar internet e credenciais em supabase-config.js"
+    },
+    "login_nao_funciona": {
+      "causa": "Usuário não existe ou senha errada",
+      "solucao": "Verificar se usuário foi criado (Tarefa 4) e tentar novamente"
+    }
+  },
+
+  "progresso": {
+    "preparacao": "100%",
+    "documentacao": "100%",
+    "execucao_do_usuario": "0%"
+  },
+
+  "proximos_passos_apos_setup": [
+    "Criar mais usuários via página de registro",
+    "Começar a usar o sistema via login.html",
+    "Gerenciar produtos no dashboard",
+    "Registrar movimentações de estoque",
+    "Acompanhar auditoria de ações",
+    "Deploy em produção (Vercel)"
+  ],
+
+  "ambiente": {
+    "framework": "HTML5 + JavaScript Vanilla",
+    "backend": "Supabase (PostgreSQL)",
+    "local": "IndexedDB (offline)",
+    "deploy": "Vercel",
+    "repositorio": "GitHub"
+  },
+
+  "criado_por": "v0 Assistant",
+  "ultima_atualizacao": "2025-04-27T14:30:00Z"
+}
