@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Setup Completo - SCM Supabase</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🚀</text></svg>">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+
+        header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            margin: 30px 0;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #4caf50;
+            border-radius: 10px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+
+        .tasks-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .task-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer;
+        }
+
+        .task-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .task-card.completed {
+            border-left: 5px solid #4caf50;
+            background: #f1f8f6;
+        }
+
+        .task-card.active {
+            border-left: 5px solid #ff9800;
+            background: #fff9f5;
+        }
+
+        .task-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .task-number {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #667eea;
+            color: white;
+            font-weight: bold;
+            font-size: 18px;
+            margin-right: 15px;
+            flex-shrink: 0;
+        }
+
+        .task-card.completed .task-number {
+            background: #4caf50;
+        }
+
+        .task-card.active .task-number {
+            background: #ff9800;
+        }
+
+        .task-title {
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .task-description {
+            color: #666;
+            font-size: 0.95rem;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .task-steps {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .task-steps li {
+            margin-left: 20px;
+            margin-bottom: 8px;
+            color: #555;
+        }
+
+        .task-status {
+            display: inline-block;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .status-todo {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+
+        .status-active {
+            background: #fff3e0;
+            color: #f57c00;
+        }
+
+        .status-done {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+
+        .instructions-section {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .instructions-section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .instructions-section h3 {
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .instructions-section ol, .instructions-section ul {
+            margin-left: 20px;
+            margin-bottom: 15px;
+            line-height: 1.8;
+            color: #555;
+        }
+
+        .code-block {
+            background: #f5f5f5;
+            padding: 12px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            overflow-x: auto;
+            border-left: 3px solid #667eea;
+            color: #333;
+        }
+
+        .checklist {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            padding: 12px;
+            background: #f5f5f5;
+            border-radius: 6px;
+        }
+
+        .checklist-item input {
+            margin-right: 12px;
+            cursor: pointer;
+            width: 18px;
+            height: 18px;
+        }
+
+        .checklist-item label {
+            flex: 1;
+            cursor: pointer;
+            color: #555;
+        }
+
+        .checklist-item input:checked + label {
+            color: #4caf50;
+            text-decoration: line-through;
+        }
+
+        .success-box {
+            background: #e8f5e9;
+            border: 2px solid #4caf50;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #2e7d32;
+        }
+
+        .warning-box {
+            background: #fff3e0;
+            border: 2px solid #ff9800;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #e65100;
+        }
+
+        .error-box {
+            background: #ffebee;
+            border: 2px solid #f44336;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #c62828;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #5568d3;
+        }
+
+        .btn-success {
+            background: #4caf50;
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #45a049;
+        }
+
+        .btn-warning {
+            background: #ff9800;
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #e68900;
+        }
+
+        .quick-links {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .quick-links h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+        }
+
+        .links-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 15px;
+        }
+
+        .link-card {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            text-decoration: none;
+            color: #667eea;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .link-card:hover {
+            background: #667eea;
+            color: white;
+            border-color: #667eea;
+        }
+
+        .link-card strong {
+            display: block;
+            margin-bottom: 5px;
+        }
+
+        .link-card span {
+            font-size: 0.85rem;
+            opacity: 0.8;
+        }
+
+        footer {
+            text-align: center;
+            color: white;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .emoji {
+            margin-right: 5px;
+        }
+
+        @media (max-width: 768px) {
+            .tasks-grid {
+                grid-template-columns: 1fr;
+            }
+
+            header h1 {
+                font-size: 1.8rem;
+            }
+
+            .instructions-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 Setup Completo - SCM Supabase</h1>
+            <p>Configure seu projeto em 6 etapas simples</p>
+        </header>
+
+        <div class="progress-bar">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+
+        <!-- Quick Links -->
+        <div class="quick-links">
+            <h2>🔗 Links Rápidos</h2>
+            <div class="links-grid">
+                <a href="https://supabase.com/dashboard/project/kaqkzrngebxfuvquromi" target="_blank" class="link-card">
+                    <strong>📊 Dashboard Supabase</strong>
+                    <span>Acessar projeto</span>
+                </a>
+                <a href="/TESTE_CONEXAO.html" class="link-card">
+                    <strong>🧪 Teste de Conexão</strong>
+                    <span>Verificar integração</span>
+                </a>
+                <a href="/CRIAR_ADMIN.html" class="link-card">
+                    <strong>👤 Criar Admin</strong>
+                    <span>Novo usuário</span>
+                </a>
+                <a href="/login.html" class="link-card">
+                    <strong>🔐 Login</strong>
+                    <span>Acessar sistema</span>
+                </a>
+                <a href="/docs/SETUP_COMPLETO_PASSO_A_PASSO.md" target="_blank" class="link-card">
+                    <strong>📖 Documentação</strong>
+                    <span>Guia detalhado</span>
+                </a>
+                <a href="https://github.com/talissow/scm-supabase-experimental" target="_blank" class="link-card">
+                    <strong>🐙 GitHub</strong>
+                    <span>Repositório</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Tasks Grid -->
+        <div class="tasks-grid" id="tasksGrid">
+            <!-- Será preenchido por JavaScript -->
+        </div>
+
+        <!-- Current Task Instructions -->
+        <div class="instructions-section" id="currentInstructions">
+            <!-- Será preenchido por JavaScript -->
+        </div>
+
+        <footer>
+            <p>Desenvolvido por Talishow Tech © 2025</p>
+            <p>SCM - Sistema de Controle de Materiais com Supabase</p>
+        </footer>
+    </div>
+
+    <script>
+        const tasks = [
+            {
+                id: 1,
+                title: "Configurar Authentication URLs",
+                description: "Adicione as URLs de autenticação no Supabase",
+                steps: [
+                    "Acesse Authentication → Settings",
+                    "Configure Site URL: https://scm-supabase.vercel.app",
+                    "Adicione 7 Redirect URLs",
+                    "Clique em Save"
+                ],
+                details: `
+                    <h3>Site URL</h3>
+                    <p>Defina para: <strong>https://scm-supabase.vercel.app</strong></p>
+                    
+                    <h3>Redirect URLs (adicione todas)</h3>
+                    <div class="code-block">
+https://scm-supabase.vercel.app
+https://scm-supabase.vercel.app/
+https://scm-supabase.vercel.app/login.html
+https://scm-supabase.vercel.app/SCM_Supabase.html
+https://scm-supabase.vercel.app/admin-interno.html
+https://scm-supabase.vercel.app/CRIAR_ADMIN.html
+https://scm-supabase.vercel.app/**
+                    </div>
+                    
+                    <div class="success-box">
+                        ✅ Clique em "Save" para confirmar
+                    </div>
+                `
+            },
+            {
+                id: 2,
+                title: "Desabilitar Email Confirmations",
+                description: "Desative confirmações de email para agilizar testes",
+                steps: [
+                    "Vá em Authentication → Settings",
+                    "Desmarque: Enable email confirmations",
+                    "Desmarque: Enable email change confirmations",
+                    "Desmarque: Enable phone confirmations",
+                    "Clique em Save"
+                ],
+                details: `
+                    <h3>Configurações de Email</h3>
+                    <p>Desmarcue (❌) as seguintes opções:</p>
+                    
+                    <div class="checklist">
+                        <div class="checklist-item">
+                            <input type="checkbox" id="email-conf" disabled>
+                            <label for="email-conf">Enable email confirmations</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="email-change" disabled>
+                            <label for="email-change">Enable email change confirmations</label>
+                        </div>
+                        <div class="checklist-item">
+                            <input type="checkbox" id="phone-conf" disabled>
+                            <label for="phone-conf">Enable phone confirmations</label>
+                        </div>
+                    </div>
+                    
+                    <div class="warning-box">
+                        ⚠️ Em produção, você provavelmente quer habilitar confirmações de email
+                    </div>
+                `
+            },
+            {
+                id: 3,
+                title: "Executar Schema SQL",
+                description: "Crie as tabelas no banco de dados",
+                steps: [
+                    "Vá em SQL Editor",
+                    "Clique em New query",
+                    "Abra: /sql/supabase_schema_public.sql",
+                    "Cole todo o conteúdo",
+                    "Clique em Run"
+                ],
+                details: `
+                    <h3>Passos Detalhados</h3>
+                    <ol>
+                        <li>No Supabase, vá em <strong>SQL Editor</strong></li>
+                        <li>Clique em <strong>New query</strong></li>
+                        <li>Abra o arquivo <strong>/sql/supabase_schema_public.sql</strong></li>
+                        <li>Copie TODO o conteúdo do arquivo</li>
+                        <li>Cole no editor SQL</li>
+                        <li>Clique no botão verde <strong>Run</strong> (ou Ctrl+Enter)</li>
+                    </ol>
+                    
+                    <h3>Tabelas que serão criadas</h3>
+                    <div class="code-block">
+✅ public.users
+✅ public.products
+✅ public.movements
+✅ public.custom_types
+✅ public.audit_log
+                    </div>
+                    
+                    <div class="success-box">
+                        ✅ Deve aparecer: "Success. No rows returned"
+                    </div>
+                `
+            },
+            {
+                id: 4,
+                title: "Criar Primeiro Usuário Admin",
+                description: "Crie o primeiro usuário para testes",
+                steps: [
+                    "Acesse /CRIAR_ADMIN.html",
+                    "Preencha Email: admin@scm.local",
+                    "Preencha uma Senha segura",
+                    "Preencha Nome Completo",
+                    "Clique em Criar Admin"
+                ],
+                details: `
+                    <h3>Opção A: Via Página Web (Recomendado)</h3>
+                    <ol>
+                        <li>Abra: <a href="/CRIAR_ADMIN.html" target="_blank">/CRIAR_ADMIN.html</a></li>
+                        <li>Preencha os dados:
+                            <div class="code-block">
+Email: admin@scm.local
+Senha: SuaSenha123!
+Nome: Seu Nome Completo
+                            </div>
+                        </li>
+                        <li>Clique em <strong>Criar Admin</strong></li>
+                    </ol>
+                    
+                    <div class="success-box">
+                        ✅ Mensagem de sucesso deve aparecer
+                    </div>
+                    
+                    <h3>Se der erro "User not allowed"</h3>
+                    <p>Verifique:</p>
+                    <ul>
+                        <li>Email confirmations está DESABILITADO (etapa 2)</li>
+                        <li>Todas as Redirect URLs estão configuradas (etapa 1)</li>
+                        <li>Tente novamente</li>
+                    </ul>
+                `
+            },
+            {
+                id: 5,
+                title: "Testar Conexão com Supabase",
+                description: "Verifique se tudo está conectado corretamente",
+                steps: [
+                    "Acesse /TESTE_CONEXAO.html",
+                    "Clique em Testar Conexão",
+                    "Clique em Testar Tabelas",
+                    "Clique em Testar Inserção",
+                    "Todos devem passar ✅"
+                ],
+                details: `
+                    <h3>Procedimento de Teste</h3>
+                    <ol>
+                        <li>Abra: <a href="/TESTE_CONEXAO.html" target="_blank">/TESTE_CONEXAO.html</a></li>
+                        <li>Clique em <strong>Testar Conexão</strong>
+                            <div class="code-block">Esperado: ✅ Conectado ao Supabase</div>
+                        </li>
+                        <li>Clique em <strong>Testar Tabelas</strong>
+                            <div class="code-block">Esperado: Todas as 5 tabelas listadas</div>
+                        </li>
+                        <li>Clique em <strong>Testar Inserção</strong>
+                            <div class="code-block">Esperado: ✅ Inserção bem-sucedida</div>
+                        </li>
+                        <li>Clique em <strong>Listar Dados</strong>
+                            <div class="code-block">Esperado: Dados inseridos aparecem</div>
+                        </li>
+                    </ol>
+                    
+                    <div class="success-box">
+                        ✅ Se todos os testes passarem, a integração está OK!
+                    </div>
+                `
+            },
+            {
+                id: 6,
+                title: "Validar Login/Logout",
+                description: "Teste o fluxo completo de autenticação",
+                steps: [
+                    "Acesse /login.html",
+                    "Faça login com admin@scm.local",
+                    "Verifique redirecionamento para /dashboard",
+                    "Teste logout",
+                    "Verifique redirecionamento para /login.html"
+                ],
+                details: `
+                    <h3>Teste de Login</h3>
+                    <ol>
+                        <li>Abra: <a href="/login.html" target="_blank">/login.html</a></li>
+                        <li>Preencha:
+                            <div class="code-block">
+Email: admin@scm.local
+Senha: A senha que criou na etapa 4
+                            </div>
+                        </li>
+                        <li>Clique em <strong>Entrar</strong></li>
+                        <li>Verifique:
+                            <ul>
+                                <li>✅ Redirecionou para /dashboard</li>
+                                <li>✅ Sistema carregou corretamente</li>
+                                <li>✅ Console não tem erros (F12)</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    
+                    <h3>Teste de Logout</h3>
+                    <ol>
+                        <li>No dashboard, procure por botão <strong>Sair</strong></li>
+                        <li>Clique nele</li>
+                        <li>Verifique:
+                            <ul>
+                                <li>✅ Redirecionou para /login.html</li>
+                                <li>✅ Sessão foi limpa</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    
+                    <h3>Teste de Proteção de Rotas</h3>
+                    <ol>
+                        <li>Faça logout primeiro</li>
+                        <li>Tente acessar: /SCM_Supabase.html</li>
+                        <li>Verifique:
+                            <ul>
+                                <li>✅ Redirecionou para /login.html</li>
+                                <li>✅ Não permitiu acesso sem autenticação</li>
+                            </ul>
+                        </li>
+                    </ol>
+                    
+                    <div class="success-box">
+                        ✅ Se todos os testes passarem, seu sistema está 100% configurado!
+                    </div>
+                `
+            }
+        ];
+
+        let currentTaskId = 1;
+
+        function renderTasks() {
+            const tasksGrid = document.getElementById('tasksGrid');
+            tasksGrid.innerHTML = tasks.map(task => `
+                <div class="task-card ${task.id === currentTaskId ? 'active' : ''} ${task.id < currentTaskId ? 'completed' : ''}" onclick="selectTask(${task.id})">
+                    <div class="task-header">
+                        <div class="task-number">${task.id}</div>
+                        <div>
+                            <div class="task-title">${task.title}</div>
+                            <span class="task-status ${task.id < currentTaskId ? 'status-done' : task.id === currentTaskId ? 'status-active' : 'status-todo'}">
+                                ${task.id < currentTaskId ? '✅ Completo' : task.id === currentTaskId ? '🔄 Atual' : '⏳ Pendente'}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="task-description">${task.description}</div>
+                    <div class="task-steps">
+                        <ul>
+                            ${task.steps.map(step => `<li>${step}</li>`).join('')}
+                        </ul>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function renderInstructions() {
+            const task = tasks.find(t => t.id === currentTaskId);
+            const section = document.getElementById('currentInstructions');
+            section.innerHTML = `
+                <h2>📋 Etapa ${task.id}: ${task.title}</h2>
+                ${task.details}
+                <div class="button-group">
+                    ${currentTaskId > 1 ? `<button class="btn btn-warning" onclick="previousTask()">← Anterior</button>` : ''}
+                    ${currentTaskId < 6 ? `<button class="btn btn-primary" onclick="nextTask()">Próxima →</button>` : ''}
+                    ${currentTaskId === 6 ? `<button class="btn btn-success" onclick="complete()">✅ Concluir Setup</button>` : ''}
+                </div>
+            `;
+        }
+
+        function updateProgress() {
+            const progress = (currentTaskId / tasks.length) * 100;
+            document.getElementById('progressFill').style.width = progress + '%';
+        }
+
+        function selectTask(id) {
+            if (id <= currentTaskId) {
+                currentTaskId = id;
+                renderTasks();
+                renderInstructions();
+                updateProgress();
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function nextTask() {
+            if (currentTaskId < tasks.length) {
+                currentTaskId++;
+                renderTasks();
+                renderInstructions();
+                updateProgress();
+                window.scrollTo({ top: document.getElementById('currentInstructions').offsetTop - 100, behavior: 'smooth' });
+            }
+        }
+
+        function previousTask() {
+            if (currentTaskId > 1) {
+                currentTaskId--;
+                renderTasks();
+                renderInstructions();
+                updateProgress();
+                window.scrollTo({ top: document.getElementById('currentInstructions').offsetTop - 100, behavior: 'smooth' });
+            }
+        }
+
+        function complete() {
+            alert('🎉 Parabéns!\n\nSeu projeto SCM + Supabase está 100% configurado!\n\nVocê pode agora:\n✅ Criar múltiplos usuários\n✅ Gerenciar produtos\n✅ Registrar movimentações\n✅ Usar em produção\n\nAcesse: /login.html');
+        }
+
+        // Inicializar
+        renderTasks();
+        renderInstructions();
+        updateProgress();
+    </script>
+</body>
+</html>
