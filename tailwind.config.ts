@@ -1,8 +1,10 @@
-/** @type {import('tailwindcss').Config} */
-export default {
+import type { Config } from "tailwindcss";
+
+const config: Config = {
   content: [
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
-    "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
+    "./src/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   darkMode: "class",
   theme: {
@@ -20,57 +22,13 @@ export default {
           800: "#1e40af",
           900: "#1e3a8a",
         },
-        secondary: {
-          50: "#f5f3ff",
-          100: "#ede9fe",
-          200: "#ddd6fe",
-          300: "#c4b5fd",
-          400: "#a78bfa",
-          500: "#8b5cf6",
-          600: "#7c3aed",
-          700: "#6d28d9",
-          800: "#5b21b6",
-          900: "#4c1d95",
-        },
-      },
-      spacing: {
-        xs: "4px",
-        sm: "8px",
-        md: "16px",
-        lg: "24px",
-        xl: "32px",
-        "2xl": "48px",
-        "3xl": "64px",
-      },
-      fontSize: {
-        xs: ["12px", { lineHeight: "16px" }],
-        sm: ["14px", { lineHeight: "20px" }],
-        base: ["16px", { lineHeight: "24px" }],
-        lg: ["18px", { lineHeight: "28px" }],
-        xl: ["20px", { lineHeight: "28px" }],
-        "2xl": ["24px", { lineHeight: "32px" }],
-        "3xl": ["30px", { lineHeight: "36px" }],
-        "4xl": ["36px", { lineHeight: "40px" }],
-      },
-      borderRadius: {
-        xs: "4px",
-        sm: "6px",
-        md: "8px",
-        lg: "12px",
-        xl: "16px",
-      },
-      boxShadow: {
-        xs: "0 1px 2px 0 rgb(0 0 0 / 0.05)",
-        sm: "0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)",
-        md: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
-        lg: "0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)",
-        xl: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)",
       },
       animation: {
         "pulse-slow": "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
-        "bounce-slow": "bounce 1s infinite",
       },
     },
   },
   plugins: [],
 };
+
+export default config;
