@@ -1,5 +1,21 @@
+# Next.js
+.next/
+out/
+build/
+dist/
+
+# Node modules
+node_modules/
+.npm
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
 # Configurações locais (NÃO COMMITAR)
 supabase-config.js
+.env.local
+.env.*.local
 
 # Backups
 *.backup
@@ -19,14 +35,17 @@ desktop.ini
 
 # Logs
 *.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-
-# Node modules (caso adicione futuramente)
-node_modules/
 
 # Arquivos temporários
 *.tmp
 *.temp
+
+# OS
+.vscode/
+.idea/
+
+# Testing
+.nyc_output
+coverage/
+
 
